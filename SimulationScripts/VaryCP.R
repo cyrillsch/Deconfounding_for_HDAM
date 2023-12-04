@@ -5,11 +5,9 @@
 source("../FunctionsHDAM/FitDeconfoundedHDAM.R")
 source("../FunctionsHDAM/AnalyzeFittedHDAM.R")
 
-
 source("Imports.R")
 library("parallel")
 library(ggplot2)
-
 
 f1 <- function(x){-sin(2*x)}
 f2 <- function(x){2-2*tanh(x+0.5)}
@@ -17,9 +15,7 @@ f3 <- function(x){x}
 f4 <- function(x){4/(exp(x)+exp(-x))}
 f <- function(X){f1(X[,1])+f2(X[,2])+f3(X[,3])+f4(X[,4])}
 
-
 # fix n = 400, p = 500
-
 q <- 5
 n <-  400
 p <- 500
@@ -49,7 +45,6 @@ one.sim <- function(prop, meth, seed.val){
 
 nrep <- 50
 
-
 ta <- Sys.time()
 prop.vec <- seq(0, 1, 0.05)
 
@@ -74,12 +69,9 @@ time.needed <- te-ta
 
 save(l.trim, l.none, time.needed, file = "ResultsVarConfProp_23_10_11.RData")
 
-
 load("ResultsVarConfProp_23_10_11.RData")
 
-
 # Plot Results
-
 resTrim <- data.frame(matrix(ncol = 4, nrow = nrep * length(prop.vec)))
 colnames(resTrim) <- c("prop", "MSE", "s.active", "meth")
 
@@ -91,7 +83,6 @@ for(j in 1: length(prop.vec)){
     resTrim$s.active[(j-1)*nrep + i] <- l.trim[[j]][[i]][2]
   }
 }
-
 
 resNone <- data.frame(matrix(ncol = 4, nrow = nrep * length(prop.vec)))
 colnames(resNone) <- c("prop", "MSE", "s.active", "meth")
@@ -111,7 +102,6 @@ resNone$prop <- factor(resNone$prop, levels = prop.vec)
 resNone$meth <- as.factor(resNone$meth)
 
 resTot <- rbind(resTrim, resNone)
-
 
 library(gridExtra)
 p <- ggplot(resTot, aes(x=prop, y=MSE, fill=meth))+geom_violin(scale="width")

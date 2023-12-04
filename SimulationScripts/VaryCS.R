@@ -8,19 +8,13 @@ source("../FunctionsHDAM/AnalyzeFittedHDAM.R")
 library("parallel")
 library(ggplot2)
 
-
-
-
 f1 <- function(x){-sin(2*x)}
 f2 <- function(x){2-2*tanh(x+0.5)}
 f3 <- function(x){x}
 f4 <- function(x){4/(exp(x)+exp(-x))}
 f <- function(X){f1(X[,1])+f2(X[,2])+f3(X[,3])+f4(X[,4])}
 
-
-
 # fix n = 400, p = 500
-
 q <- 5
 n <-  400
 p <- 500
@@ -75,7 +69,6 @@ save(l.trim, l.none, time.needed, file = "ResultsVarCS_23_10_11.RData")
 
 load("ResultsVarCS_23_10_11.RData")
 
-
 resTrim <- data.frame(matrix(ncol = 4, nrow = nrep * length(cs.vec)))
 colnames(resTrim) <- c("cs", "MSE", "s.active", "meth")
 
@@ -115,8 +108,6 @@ p <- p + stat_summary(fun.y=mean, geom="point", position=position_dodge(0.9)) +
 p <- p + theme(axis.text=element_text(size=12),
                axis.title=element_text(size=12), title=element_text(size=11.5),
                legend.title=element_blank(), legend.text=element_text(size = 12))
-
-
 
 q <- ggplot(resTot, aes(x=cs, y=s.active, fill=meth))+geom_violin(scale="width")
 q <- q + stat_summary(fun.y=mean, geom="point", position=position_dodge(0.9)) +

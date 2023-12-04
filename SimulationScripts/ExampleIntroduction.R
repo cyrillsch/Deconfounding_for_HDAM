@@ -1,7 +1,7 @@
 ## Code to reproduce Figure 1
 # Introductory example
 
-# The R-Spript VarP.R needs to be run before.
+# The R-Script VarP.R needs to be run before.
 
 # consider the setting n = 300, p = 800 from the simulation script VarP.R
 load("VarP_2023_10_12.RData")

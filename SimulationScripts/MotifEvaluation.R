@@ -1,7 +1,6 @@
 ## Code to reproduce Figures 9, 10, 11, 12
 # Analysis of the motif regression data set
 
-
 # Import the functions needed
 source("../FunctionsHDAM/FitDeconfoundedHDAM.R")
 source("../FunctionsHDAM/AnalyzeFittedHDAM.R")
@@ -117,4 +116,3 @@ par(mfrow = c(1,2))
 plot(sqrt(coeflength.null), sqrt(coeflength.trim), main = "Norm of coefficient vectors", xlab = "naive", ylab = "deconfounded", xlim = c(0, 3.1), ylim = c(0, 3.1))
 abline(0,1)
 plot(jaccard.sim, main = "Jaccard similarity of top l index sets", type = "l", xlab = "l", ylab = "Jaccard similarity")
-

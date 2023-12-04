@@ -17,7 +17,6 @@ f4 <- function(x){4/(exp(x)+exp(-x))}
 f <- function(X){f1(X[,1])+f2(X[,2])+f3(X[,3])+f4(X[,4])}
 
 # fix p = 300, q = 5
-
 q <- 5
 p <- 300
 
@@ -53,10 +52,8 @@ one.sim <- function(n, meth, rho = NULL, seed.val){
 
 nrep <- 100
 
-
 ta <- Sys.time()
 n.vec <- c(50, 100, 200, 400, 800)
-
 
 l.VarN.trim.NULL <- list()
 l.VarN.none.NULL <- list()
@@ -127,7 +124,6 @@ resNone.NULL$meth <- as.factor(resNone.NULL$meth)
 
 resTot.NULL <- rbind(resTrim.NULL, resNone.NULL)
 
-
 library(gridExtra)
 p <- ggplot(resTot.NULL, aes(x=n, y=MSE, fill=meth))+geom_violin(scale = "width")
 p <- p + stat_summary(fun.y=mean, geom="point", position=position_dodge(0.9)) +
@@ -177,8 +173,6 @@ resNone.rho04$meth <- as.factor(resNone.rho04$meth)
 
 resTot.rho04 <- rbind(resTrim.rho04, resNone.rho04)
 
-
-
 p <- ggplot(resTot.rho04, aes(x=n, y=MSE, fill=meth))+geom_violin(scale = "width")
 p <- p + stat_summary(fun.y=mean, geom="point", position=position_dodge(0.9)) +
   xlab("n") + ylab("MSE") + ggtitle("MSE of f with p=300, q=5, s=4, E Toeplitz(0.4)")
@@ -194,7 +188,6 @@ q <- q + theme(axis.text=element_text(size=12),
                legend.title=element_blank(), legend.text=element_text(size = 12))
 
 grid.arrange(p, q, nrow=2)
-
 
 # E has Toeplitz correlation with rho = 0.8
 resTrim.rho08 <- data.frame(matrix(ncol = 4, nrow = nrep * length(n.vec)))
@@ -243,6 +236,5 @@ q <- q + stat_summary(fun.y=mean, geom="point", position=position_dodge(0.9)) +
 q <- q + theme(axis.text=element_text(size=12),
                axis.title=element_text(size=12), title=element_text(size=11.5),
                legend.title=element_blank(), legend.text=element_text(size = 12))
-
 
 grid.arrange(p, q, nrow=2)
