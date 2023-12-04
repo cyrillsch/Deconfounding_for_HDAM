@@ -22,7 +22,7 @@ estimate.function.1d <- function(x, lreturn){
   return(y)
 }
 
-# function to predict at a matrix X in R^{n x p} of new values.
+# function to predict at a matrix X in R^{n x p} of new values from the output of FitDeconfoundedHDAM()
 estimate.function <- function(X, lreturn){
   ef1 <- function(x){
     return(estimate.function.1d(x, lreturn))
@@ -31,7 +31,7 @@ estimate.function <- function(X, lreturn){
   return(y)
 }
 
-# functions to predict individual component functions f_j
+# functions to predict individual component functions f_j from the output of FitDeconfoundedHDAM()
 estimate.fj.1d <- function(x, j, lreturn){
   x <- x - lreturn$Xmeans[j]
   breaks <- lreturn$breaks[[j]]
