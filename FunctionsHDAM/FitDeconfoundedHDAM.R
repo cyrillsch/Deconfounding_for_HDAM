@@ -1,9 +1,11 @@
+# Function FitDeconfoundedHDAM() to fit a deconfounded high-dimensional additive model.
+# Helper functions: cv.hdam, calcTrim, DeconfoundedHDAM
+
 library(fda)
 library(grplasso)
 
 # Input: Transformed QY, QB, index of grouping, vector of lambda values, number of folds k
 # Output: Cross-validated MSEs and SEs as well as lambda.min and lambda.1se
-
 cv.hdam <- function(QY, QB, index, lambda, k = 5){
   n <- NROW(QB)
   ind <-  sample(rep(1:k, length.out = n), replace = FALSE)
@@ -35,6 +37,8 @@ cv.hdam <- function(QY, QB, index, lambda, k = 5){
   return(lresult)
 }
 
+# Input: Data matrix X in R^{n x p}
+# Output: Trim transformation Q in R^{n x n}
 calcTrim <- function(X){
   n <- NROW(X)
   svdX <-  svd(X)
@@ -45,7 +49,9 @@ calcTrim <- function(X){
   return(Q)
 }
 
-
+# Input: Response Y, predictors X, given number basis.k of basis functions,
+#        transformation method, cross-validation method, cross validation k, number of lambdas to consider
+# Output: Fitted HDAM at best lambda for the given number basis.k of basis functions
 DeconfoundedHDAM <- function(Y, X, basis.k, meth = "trim", cv.method = "1se", cv.k = 5, n.lambda = 20){
   K <- basis.k
   n <- NROW(X)
@@ -119,8 +125,10 @@ DeconfoundedHDAM <- function(Y, X, basis.k, meth = "trim", cv.method = "1se", cv
   return(lreturn)
 }
 
-
-# n.lambda1 is used to find optimal K, n.lambda2 is used to find optimal lambda for this K
+# Input: Response Y, predictors X, number n.K of Ks to consider,
+#        transformation method, cross-validation method, cross validation k,
+#        number of lambdas to consider for both rounds of cross validation
+#        (n.lambda1 is used to find optimal K, n.lambda2 is used to find optimal lambda for this K)
 FitDeconfoundedHDAM <- function(Y, X, n.K = 4, meth = "trim", cv.method = "1se", cv.k = 5, n.lambda1 = 15, n.lambda2 = 30){
   n <- NROW(X)
   p <- NCOL(X)
@@ -135,7 +143,6 @@ FitDeconfoundedHDAM <- function(Y, X, n.K = 4, meth = "trim", cv.method = "1se",
   }
   K.up <- round(10*n^0.2)
   vK <- round(seq(4, K.up, length.out = n.K))
-  
   # spectral transformation
   if(meth == "trim"){
     Q <- calcTrim(X)
@@ -146,7 +153,6 @@ FitDeconfoundedHDAM <- function(Y, X, n.K = 4, meth = "trim", cv.method = "1se",
   } else {
     stop("You must choose meth = 'trim' or 'none'.")
   }
-  
   # Generate the design and model parameters for every K in vK
   lmodK <- list()
   for (i in 1:length(vK)){
@@ -172,7 +178,6 @@ FitDeconfoundedHDAM <- function(Y, X, n.K = 4, meth = "trim", cv.method = "1se",
     lambdamax <- lambdamax(QB, QY, index = index, model = LinReg(), center = FALSE, standardize = FALSE)
     # lambdas for cross validation
     lambda <- lambdamax / 1000^(0:(n.lambda1-1) / (n.lambda1-1))
-  
     lmodK[[i]] <- list(Rlist = Rlist, lbreaks = lbreaks, index = index, B = B, QB = QB, lambda = lambda)
   }
   # generate folds for CV
@@ -196,7 +201,6 @@ FitDeconfoundedHDAM <- function(Y, X, n.K = 4, meth = "trim", cv.method = "1se",
     return(MSEl)
   }
   MSES <- lapply(1:cv.k, fun.ind)
-  
   # aggregate MSES over folds
   MSES.agg <- matrix(NA, nrow = n.K, ncol = n.lambda1)
   for (i in 1:n.K){
@@ -211,7 +215,6 @@ FitDeconfoundedHDAM <- function(Y, X, n.K = 4, meth = "trim", cv.method = "1se",
   ind.min <- which(MSES.agg == min(MSES.agg), arr.ind = TRUE)
   K.min <- vK[ind.min[1]]
   lambda.min <- lmodK[[ind.min[1]]]$lambda[ind.min[2]]
-  
   # refit model for this K and choose optimal lambda from larger list
   lreturn <- DeconfoundedHDAM(Y, X, basis.k = K.min, meth = meth, cv.method = cv.method, cv.k = cv.k, n.lambda = n.lambda2)
   lreturn$K.min <- K.min
