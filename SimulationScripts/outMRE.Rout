@@ -1,0 +1,1531 @@
+
+R version 4.3.1 (2023-06-16) -- "Beagle Scouts"
+Copyright (C) 2023 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu (64-bit)
+
+R ist freie Software und kommt OHNE JEGLICHE GARANTIE.
+Sie sind eingeladen, es unter bestimmten Bedingungen weiter zu verbreiten.
+Tippen Sie 'license()' or 'licence()' für Details dazu.
+
+R ist ein Gemeinschaftsprojekt mit vielen Beitragenden.
+Tippen Sie 'contributors()' für mehr Information und 'citation()',
+um zu erfahren, wie R oder R packages in Publikationen zitiert werden können.
+
+Tippen Sie 'demo()' für einige Demos, 'help()' für on-line Hilfe, oder
+'help.start()' für eine HTML Browserschnittstelle zur Hilfe.
+Tippen Sie 'q()', um R zu verlassen.
+
+> # Check, how reasonable the results from the motiv example are
+> # We extract the first few principal components of the data and construct
+> # a synthetic response using them.
+> 
+> source("Imports.R")
+Lade nötiges Paket: splines
+Lade nötiges Paket: fds
+Lade nötiges Paket: rainbow
+Lade nötiges Paket: MASS
+Lade nötiges Paket: pcaPP
+Lade nötiges Paket: RCurl
+Lade nötiges Paket: deSolve
+
+Attache Paket: ‘fda’
+
+Das folgende Objekt ist maskiert ‘package:graphics’:
+
+    matplot
+
+> load("MotifData/fornicolai.RData")
+> 
+> 
+> #Data as in DLL-Real-Data.R, i.e. y=genes[, 131].
+> # data
+> t = 131
+> y = genes[,t]
+> X = motifs
+> par(mfrow=c(1,1))
+> svdX.d <- svd(X)$d
+> plot(svdX.d)
+> # Very large first eigenvalue. But Data not centered.
+> Xmeans <- colMeans(X)
+> Xc <- X-outer(rep(1, length(y)), Xmeans)
+> svdX.c <- svd(Xc)
+> plot(svdX.c$d, main = "Singular values of (centered) motif data", ylab="singular value d_l", xlab = "l")
+> # still confounding might be present
+> abline(v = 20)
+> 
+> 
+> 
+> 
+> # take the first 20 principal components as the confounder H
+> n <- length(y)
+> H <- sqrt(n)*svdX.c$u[, 1:20]
+> 
+> # generate synthetic Y
+> 
+> f <- function(a, t){0.8*sin(1.5*(t-a))*exp(0.8*t)}
+> 
+> # With a  randomly, this yields functions similar to the
+> # ones fitted on the Motif data.
+> 
+> set.seed(1220)
+> par(mfrow=c(3, 3))
+> xx <- seq(-1.87, 1.54, 0.01)
+> for(i in 1:9){
++   a <- runif(1)
++   plot(xx, f(a, xx), type = "l")
++ }
+> 
+> 
+> # sample 95 active variables at random
+> 
+> act <- sample(1:666, 95, replace = FALSE)
+> 
+> # Only the first few functions should be "strong". I.e. weights decreasing and random sign
+> Y <- 0
+> # w <-  1/sqrt(1:length(act))*(2*rbinom(length(act), 1, 0.5)-1)
+> w <- -c(1, -1, -1, 1, 1/1:(length(act)-4)*(2*rbinom(length(act)-4, 1, 0.5)-1))
+> a <- runif(length(act))
+> for(i in 1:length(act)){
++   Y <- Y+w[i]*f(a[i], X[, act[i]])
++ }
+> 
+> # # without confounding in Y
+> # Y <- Y+0.5*rnorm(n)
+> 
+> # with confounding in Y
+> del <- 0.1*runif(20, -1,1)
+> Y <- Y + c(H%*%del)+0.5*rnorm(n)
+> 
+> indi <- sample(1:666, 9)
+> par(mfrow=c(3, 3))
+> for(i in 1:9){
++   plot(Xc[, indi[i]], Y)
++ }
+> 
+> for(i in 1:9){
++   plot(Xc[, indi[i]], y)
++ }
+> 
+> 
+> 
+> fit.null <- FitDeconfoundedHDAM(Y, Xc, n.K = 5, meth = "none", cv.method = "1se", cv.k = 5, n.lambda1 = 15, n.lambda2 = 50)
+Setting update.every = length(lambda) + 1
+Lambda: 1689.14  nr.var: 1 
+Lambda: 1031.288  nr.var: 17 
+Lambda: 629.6429  nr.var: 17 
+Lambda: 384.4223  nr.var: 25 
+Lambda: 234.7053  nr.var: 25 
+Lambda: 143.297  nr.var: 41 
+Lambda: 87.48859  nr.var: 125 
+Lambda: 53.41531  nr.var: 369 
+Lambda: 32.61219  nr.var: 829 
+Lambda: 19.91106  nr.var: 1441 
+Lambda: 12.1565  nr.var: 1909 
+Lambda: 7.422033  nr.var: 2233 
+Lambda: 4.53145  nr.var: 2441 
+Lambda: 2.766632  nr.var: 2577 
+Lambda: 1.68914  nr.var: 2621 
+Setting update.every = length(lambda) + 1
+Lambda: 880.1843  nr.var: 1 
+Lambda: 537.3879  nr.var: 61 
+Lambda: 328.0969  nr.var: 61 
+Lambda: 200.3164  nr.var: 91 
+Lambda: 122.3012  nr.var: 106 
+Lambda: 74.66981  nr.var: 346 
+Lambda: 45.58892  nr.var: 2251 
+Lambda: 27.83387  nr.var: 4546 
+Lambda: 16.9937  nr.var: 6001 
+Lambda: 10.37534  nr.var: 6871 
+Lambda: 6.33456  nr.var: 7306 
+Lambda: 3.867504  nr.var: 7606 
+Lambda: 2.361267  nr.var: 7771 
+Lambda: 1.441648  nr.var: 7846 
+Lambda: 0.8801843  nr.var: 7906 
+Setting update.every = length(lambda) + 1
+Lambda: 676.1469  nr.var: 1 
+Lambda: 412.8149  nr.var: 105 
+Lambda: 252.0401  nr.var: 105 
+Lambda: 153.8806  nr.var: 157 
+Lambda: 93.95031  nr.var: 209 
+Lambda: 57.36044  nr.var: 1769 
+Lambda: 35.02086  nr.var: 5747 
+Lambda: 21.38164  nr.var: 8399 
+Lambda: 13.05435  nr.var: 10037 
+Lambda: 7.970208  nr.var: 10609 
+Lambda: 4.866133  nr.var: 11103 
+Lambda: 2.97097  nr.var: 11337 
+Lambda: 1.813897  nr.var: 11415 
+Lambda: 1.107457  nr.var: 11467 
+Lambda: 0.6761469  nr.var: 11519 
+Setting update.every = length(lambda) + 1
+Lambda: 572.3868  nr.var: 1 
+Lambda: 349.4652  nr.var: 149 
+Lambda: 213.3626  nr.var: 186 
+Lambda: 130.2664  nr.var: 223 
+Lambda: 79.53289  nr.var: 371 
+Lambda: 48.55803  nr.var: 4700 
+Lambda: 29.64663  nr.var: 8696 
+Lambda: 18.10046  nr.var: 11730 
+Lambda: 11.05106  nr.var: 13506 
+Lambda: 6.747116  nr.var: 14320 
+Lambda: 4.119386  nr.var: 14875 
+Lambda: 2.515051  nr.var: 15171 
+Lambda: 1.53554  nr.var: 15208 
+Lambda: 0.9375088  nr.var: 15208 
+Lambda: 0.5723868  nr.var: 15245 
+Setting update.every = length(lambda) + 1
+Lambda: 504.5613  nr.var: 1 
+Lambda: 308.055  nr.var: 193 
+Lambda: 188.08  nr.var: 241 
+Lambda: 114.8304  nr.var: 289 
+Lambda: 70.10857  nr.var: 961 
+Lambda: 42.8041  nr.var: 7585 
+Lambda: 26.13363  nr.var: 12145 
+Lambda: 15.95563  nr.var: 14209 
+Lambda: 9.741554  nr.var: 15793 
+Lambda: 5.947611  nr.var: 16849 
+Lambda: 3.631256  nr.var: 17329 
+Lambda: 2.217028  nr.var: 17329 
+Lambda: 1.353585  nr.var: 17473 
+Lambda: 0.8264179  nr.var: 17425 
+Lambda: 0.5045613  nr.var: 17521 
+Setting update.every = length(lambda) + 1
+Lambda: 1689.14  nr.var: 1 
+Lambda: 1031.288  nr.var: 17 
+Lambda: 629.6429  nr.var: 17 
+Lambda: 384.4223  nr.var: 25 
+Lambda: 234.7053  nr.var: 25 
+Lambda: 143.297  nr.var: 41 
+Lambda: 87.48859  nr.var: 133 
+Lambda: 53.41531  nr.var: 349 
+Lambda: 32.61219  nr.var: 861 
+Lambda: 19.91106  nr.var: 1373 
+Lambda: 12.1565  nr.var: 1897 
+Lambda: 7.422033  nr.var: 2289 
+Lambda: 4.53145  nr.var: 2509 
+Lambda: 2.766632  nr.var: 2581 
+Lambda: 1.68914  nr.var: 2645 
+Setting update.every = length(lambda) + 1
+Lambda: 880.1843  nr.var: 1 
+Lambda: 537.3879  nr.var: 61 
+Lambda: 328.0969  nr.var: 61 
+Lambda: 200.3164  nr.var: 91 
+Lambda: 122.3012  nr.var: 106 
+Lambda: 74.66981  nr.var: 331 
+Lambda: 45.58892  nr.var: 2131 
+Lambda: 27.83387  nr.var: 4546 
+Lambda: 16.9937  nr.var: 6136 
+Lambda: 10.37534  nr.var: 6826 
+Lambda: 6.33456  nr.var: 7411 
+Lambda: 3.867504  nr.var: 7756 
+Lambda: 2.361267  nr.var: 7966 
+Lambda: 1.441648  nr.var: 7996 
+Lambda: 0.8801843  nr.var: 8041 
+Setting update.every = length(lambda) + 1
+Lambda: 676.1469  nr.var: 1 
+Lambda: 412.8149  nr.var: 105 
+Lambda: 252.0401  nr.var: 105 
+Lambda: 153.8806  nr.var: 157 
+Lambda: 93.95031  nr.var: 183 
+Lambda: 57.36044  nr.var: 1951 
+Lambda: 35.02086  nr.var: 5825 
+Lambda: 21.38164  nr.var: 8399 
+Lambda: 13.05435  nr.var: 9829 
+Lambda: 7.970208  nr.var: 10947 
+Lambda: 4.866133  nr.var: 11545 
+Lambda: 2.97097  nr.var: 11727 
+Lambda: 1.813897  nr.var: 11805 
+Lambda: 1.107457  nr.var: 11753 
+Lambda: 0.6761469  nr.var: 11779 
+Setting update.every = length(lambda) + 1
+Lambda: 572.3868  nr.var: 1 
+Lambda: 349.4652  nr.var: 149 
+Lambda: 213.3626  nr.var: 149 
+Lambda: 130.2664  nr.var: 223 
+Lambda: 79.53289  nr.var: 408 
+Lambda: 48.55803  nr.var: 4552 
+Lambda: 29.64663  nr.var: 8807 
+Lambda: 18.10046  nr.var: 11471 
+Lambda: 11.05106  nr.var: 12914 
+Lambda: 6.747116  nr.var: 13802 
+Lambda: 4.119386  nr.var: 14431 
+Lambda: 2.515051  nr.var: 14653 
+Lambda: 1.53554  nr.var: 14616 
+Lambda: 0.9375088  nr.var: 14394 
+Lambda: 0.5723868  nr.var: 14320 
+Setting update.every = length(lambda) + 1
+Lambda: 504.5613  nr.var: 1 
+Lambda: 308.055  nr.var: 193 
+Lambda: 188.08  nr.var: 193 
+Lambda: 114.8304  nr.var: 289 
+Lambda: 70.10857  nr.var: 1057 
+Lambda: 42.8041  nr.var: 6961 
+Lambda: 26.13363  nr.var: 11617 
+Lambda: 15.95563  nr.var: 14017 
+Lambda: 9.741554  nr.var: 15601 
+Lambda: 5.947611  nr.var: 16609 
+Lambda: 3.631256  nr.var: 16609 
+Lambda: 2.217028  nr.var: 16801 
+Lambda: 1.353585  nr.var: 17089 
+Lambda: 0.8264179  nr.var: 17281 
+Lambda: 0.5045613  nr.var: 17281 
+Setting update.every = length(lambda) + 1
+Lambda: 1689.14  nr.var: 1 
+Lambda: 1031.288  nr.var: 17 
+Lambda: 629.6429  nr.var: 17 
+Lambda: 384.4223  nr.var: 25 
+Lambda: 234.7053  nr.var: 25 
+Lambda: 143.297  nr.var: 41 
+Lambda: 87.48859  nr.var: 117 
+Lambda: 53.41531  nr.var: 357 
+Lambda: 32.61219  nr.var: 741 
+Lambda: 19.91106  nr.var: 1349 
+Lambda: 12.1565  nr.var: 1897 
+Lambda: 7.422033  nr.var: 2269 
+Lambda: 4.53145  nr.var: 2473 
+Lambda: 2.766632  nr.var: 2565 
+Lambda: 1.68914  nr.var: 2621 
+Setting update.every = length(lambda) + 1
+Lambda: 880.1843  nr.var: 1 
+Lambda: 537.3879  nr.var: 61 
+Lambda: 328.0969  nr.var: 61 
+Lambda: 200.3164  nr.var: 91 
+Lambda: 122.3012  nr.var: 106 
+Lambda: 74.66981  nr.var: 421 
+Lambda: 45.58892  nr.var: 2176 
+Lambda: 27.83387  nr.var: 4411 
+Lambda: 16.9937  nr.var: 5941 
+Lambda: 10.37534  nr.var: 6616 
+Lambda: 6.33456  nr.var: 7156 
+Lambda: 3.867504  nr.var: 7516 
+Lambda: 2.361267  nr.var: 7741 
+Lambda: 1.441648  nr.var: 7891 
+Lambda: 0.8801843  nr.var: 7876 
+Setting update.every = length(lambda) + 1
+Lambda: 676.1469  nr.var: 1 
+Lambda: 412.8149  nr.var: 105 
+Lambda: 252.0401  nr.var: 105 
+Lambda: 153.8806  nr.var: 157 
+Lambda: 93.95031  nr.var: 209 
+Lambda: 57.36044  nr.var: 1795 
+Lambda: 35.02086  nr.var: 5123 
+Lambda: 21.38164  nr.var: 8243 
+Lambda: 13.05435  nr.var: 9985 
+Lambda: 7.970208  nr.var: 10947 
+Lambda: 4.866133  nr.var: 11415 
+Lambda: 2.97097  nr.var: 11753 
+Lambda: 1.813897  nr.var: 11805 
+Lambda: 1.107457  nr.var: 11805 
+Lambda: 0.6761469  nr.var: 11571 
+Setting update.every = length(lambda) + 1
+Lambda: 572.3868  nr.var: 1 
+Lambda: 349.4652  nr.var: 149 
+Lambda: 213.3626  nr.var: 149 
+Lambda: 130.2664  nr.var: 223 
+Lambda: 79.53289  nr.var: 482 
+Lambda: 48.55803  nr.var: 3775 
+Lambda: 29.64663  nr.var: 8289 
+Lambda: 18.10046  nr.var: 11397 
+Lambda: 11.05106  nr.var: 12655 
+Lambda: 6.747116  nr.var: 13691 
+Lambda: 4.119386  nr.var: 14320 
+Lambda: 2.515051  nr.var: 14579 
+Lambda: 1.53554  nr.var: 14727 
+Lambda: 0.9375088  nr.var: 14912 
+Lambda: 0.5723868  nr.var: 14949 
+Setting update.every = length(lambda) + 1
+Lambda: 504.5613  nr.var: 1 
+Lambda: 308.055  nr.var: 193 
+Lambda: 188.08  nr.var: 193 
+Lambda: 114.8304  nr.var: 289 
+Lambda: 70.10857  nr.var: 1009 
+Lambda: 42.8041  nr.var: 6481 
+Lambda: 26.13363  nr.var: 11089 
+Lambda: 15.95563  nr.var: 14209 
+Lambda: 9.741554  nr.var: 15841 
+Lambda: 5.947611  nr.var: 16321 
+Lambda: 3.631256  nr.var: 16801 
+Lambda: 2.217028  nr.var: 16753 
+Lambda: 1.353585  nr.var: 16369 
+Lambda: 0.8264179  nr.var: 16273 
+Lambda: 0.5045613  nr.var: 16321 
+Setting update.every = length(lambda) + 1
+Lambda: 1689.14  nr.var: 1 
+Lambda: 1031.288  nr.var: 17 
+Lambda: 629.6429  nr.var: 17 
+Lambda: 384.4223  nr.var: 25 
+Lambda: 234.7053  nr.var: 25 
+Lambda: 143.297  nr.var: 41 
+Lambda: 87.48859  nr.var: 121 
+Lambda: 53.41531  nr.var: 341 
+Lambda: 32.61219  nr.var: 865 
+Lambda: 19.91106  nr.var: 1453 
+Lambda: 12.1565  nr.var: 1937 
+Lambda: 7.422033  nr.var: 2285 
+Lambda: 4.53145  nr.var: 2465 
+Lambda: 2.766632  nr.var: 2561 
+Lambda: 1.68914  nr.var: 2621 
+Setting update.every = length(lambda) + 1
+Lambda: 880.1843  nr.var: 1 
+Lambda: 537.3879  nr.var: 61 
+Lambda: 328.0969  nr.var: 61 
+Lambda: 200.3164  nr.var: 91 
+Lambda: 122.3012  nr.var: 106 
+Lambda: 74.66981  nr.var: 391 
+Lambda: 45.58892  nr.var: 2131 
+Lambda: 27.83387  nr.var: 4591 
+Lambda: 16.9937  nr.var: 6301 
+Lambda: 10.37534  nr.var: 6931 
+Lambda: 6.33456  nr.var: 7381 
+Lambda: 3.867504  nr.var: 7651 
+Lambda: 2.361267  nr.var: 7816 
+Lambda: 1.441648  nr.var: 7891 
+Lambda: 0.8801843  nr.var: 7966 
+Setting update.every = length(lambda) + 1
+Lambda: 676.1469  nr.var: 1 
+Lambda: 412.8149  nr.var: 105 
+Lambda: 252.0401  nr.var: 105 
+Lambda: 153.8806  nr.var: 157 
+Lambda: 93.95031  nr.var: 209 
+Lambda: 57.36044  nr.var: 2081 
+Lambda: 35.02086  nr.var: 5747 
+Lambda: 21.38164  nr.var: 8269 
+Lambda: 13.05435  nr.var: 9777 
+Lambda: 7.970208  nr.var: 10973 
+Lambda: 4.866133  nr.var: 11441 
+Lambda: 2.97097  nr.var: 11779 
+Lambda: 1.813897  nr.var: 11883 
+Lambda: 1.107457  nr.var: 11883 
+Lambda: 0.6761469  nr.var: 11857 
+Setting update.every = length(lambda) + 1
+Lambda: 572.3868  nr.var: 1 
+Lambda: 349.4652  nr.var: 149 
+Lambda: 213.3626  nr.var: 149 
+Lambda: 130.2664  nr.var: 223 
+Lambda: 79.53289  nr.var: 630 
+Lambda: 48.55803  nr.var: 4663 
+Lambda: 29.64663  nr.var: 8770 
+Lambda: 18.10046  nr.var: 11545 
+Lambda: 11.05106  nr.var: 12840 
+Lambda: 6.747116  nr.var: 13691 
+Lambda: 4.119386  nr.var: 14098 
+Lambda: 2.515051  nr.var: 14283 
+Lambda: 1.53554  nr.var: 14764 
+Lambda: 0.9375088  nr.var: 14838 
+Lambda: 0.5723868  nr.var: 14764 
+Setting update.every = length(lambda) + 1
+Lambda: 504.5613  nr.var: 1 
+Lambda: 308.055  nr.var: 193 
+Lambda: 188.08  nr.var: 193 
+Lambda: 114.8304  nr.var: 289 
+Lambda: 70.10857  nr.var: 1441 
+Lambda: 42.8041  nr.var: 7009 
+Lambda: 26.13363  nr.var: 11089 
+Lambda: 15.95563  nr.var: 13873 
+Lambda: 9.741554  nr.var: 15745 
+Lambda: 5.947611  nr.var: 16849 
+Lambda: 3.631256  nr.var: 17233 
+Lambda: 2.217028  nr.var: 17521 
+Lambda: 1.353585  nr.var: 17713 
+Lambda: 0.8264179  nr.var: 17665 
+Lambda: 0.5045613  nr.var: 17617 
+Setting update.every = length(lambda) + 1
+Lambda: 1689.14  nr.var: 1 
+Lambda: 1031.288  nr.var: 17 
+Lambda: 629.6429  nr.var: 17 
+Lambda: 384.4223  nr.var: 25 
+Lambda: 234.7053  nr.var: 25 
+Lambda: 143.297  nr.var: 37 
+Lambda: 87.48859  nr.var: 113 
+Lambda: 53.41531  nr.var: 341 
+Lambda: 32.61219  nr.var: 801 
+Lambda: 19.91106  nr.var: 1437 
+Lambda: 12.1565  nr.var: 1985 
+Lambda: 7.422033  nr.var: 2297 
+Lambda: 4.53145  nr.var: 2469 
+Lambda: 2.766632  nr.var: 2557 
+Lambda: 1.68914  nr.var: 2625 
+Setting update.every = length(lambda) + 1
+Lambda: 880.1843  nr.var: 1 
+Lambda: 537.3879  nr.var: 61 
+Lambda: 328.0969  nr.var: 61 
+Lambda: 200.3164  nr.var: 91 
+Lambda: 122.3012  nr.var: 106 
+Lambda: 74.66981  nr.var: 346 
+Lambda: 45.58892  nr.var: 2221 
+Lambda: 27.83387  nr.var: 4696 
+Lambda: 16.9937  nr.var: 6121 
+Lambda: 10.37534  nr.var: 7006 
+Lambda: 6.33456  nr.var: 7546 
+Lambda: 3.867504  nr.var: 7756 
+Lambda: 2.361267  nr.var: 7936 
+Lambda: 1.441648  nr.var: 7981 
+Lambda: 0.8801843  nr.var: 8026 
+Setting update.every = length(lambda) + 1
+Lambda: 676.1469  nr.var: 1 
+Lambda: 412.8149  nr.var: 105 
+Lambda: 252.0401  nr.var: 105 
+Lambda: 153.8806  nr.var: 157 
+Lambda: 93.95031  nr.var: 183 
+Lambda: 57.36044  nr.var: 1769 
+Lambda: 35.02086  nr.var: 5669 
+Lambda: 21.38164  nr.var: 8633 
+Lambda: 13.05435  nr.var: 10089 
+Lambda: 7.970208  nr.var: 11051 
+Lambda: 4.866133  nr.var: 11415 
+Lambda: 2.97097  nr.var: 11701 
+Lambda: 1.813897  nr.var: 11727 
+Lambda: 1.107457  nr.var: 11727 
+Lambda: 0.6761469  nr.var: 11805 
+Setting update.every = length(lambda) + 1
+Lambda: 572.3868  nr.var: 1 
+Lambda: 349.4652  nr.var: 149 
+Lambda: 213.3626  nr.var: 149 
+Lambda: 130.2664  nr.var: 223 
+Lambda: 79.53289  nr.var: 334 
+Lambda: 48.55803  nr.var: 4219 
+Lambda: 29.64663  nr.var: 8474 
+Lambda: 18.10046  nr.var: 11286 
+Lambda: 11.05106  nr.var: 13025 
+Lambda: 6.747116  nr.var: 14024 
+Lambda: 4.119386  nr.var: 14653 
+Lambda: 2.515051  nr.var: 15097 
+Lambda: 1.53554  nr.var: 15060 
+Lambda: 0.9375088  nr.var: 15282 
+Lambda: 0.5723868  nr.var: 15208 
+Setting update.every = length(lambda) + 1
+Lambda: 504.5613  nr.var: 1 
+Lambda: 308.055  nr.var: 193 
+Lambda: 188.08  nr.var: 193 
+Lambda: 114.8304  nr.var: 289 
+Lambda: 70.10857  nr.var: 913 
+Lambda: 42.8041  nr.var: 6865 
+Lambda: 26.13363  nr.var: 11857 
+Lambda: 15.95563  nr.var: 14353 
+Lambda: 9.741554  nr.var: 15793 
+Lambda: 5.947611  nr.var: 16801 
+Lambda: 3.631256  nr.var: 17281 
+Lambda: 2.217028  nr.var: 17569 
+Lambda: 1.353585  nr.var: 17713 
+Lambda: 0.8264179  nr.var: 17809 
+Lambda: 0.5045613  nr.var: 17665 
+Setting update.every = length(lambda) + 1
+Lambda: 1689.14  nr.var: 1 
+Lambda: 1467.038  nr.var: 1 
+Lambda: 1274.139  nr.var: 9 
+Lambda: 1106.604  nr.var: 13 
+Lambda: 961.0982  nr.var: 17 
+Lambda: 834.7247  nr.var: 17 
+Lambda: 724.9679  nr.var: 17 
+Lambda: 629.6429  nr.var: 17 
+Lambda: 546.852  nr.var: 17 
+Lambda: 474.9472  nr.var: 25 
+Lambda: 412.497  nr.var: 25 
+Lambda: 358.2584  nr.var: 25 
+Lambda: 311.1515  nr.var: 25 
+Lambda: 270.2386  nr.var: 25 
+Lambda: 234.7053  nr.var: 25 
+Lambda: 203.8442  nr.var: 25 
+Lambda: 177.041  nr.var: 33 
+Lambda: 153.7621  nr.var: 41 
+Lambda: 133.5442  nr.var: 53 
+Lambda: 115.9846  nr.var: 61 
+Lambda: 100.734  nr.var: 89 
+Lambda: 87.48859  nr.var: 133 
+Lambda: 75.98484  nr.var: 157 
+Lambda: 65.9937  nr.var: 205 
+Lambda: 57.31628  nr.var: 333 
+Lambda: 49.77984  nr.var: 441 
+Lambda: 43.23436  nr.var: 537 
+Lambda: 37.54953  nr.var: 697 
+Lambda: 32.61219  nr.var: 873 
+Lambda: 28.32406  nr.var: 1049 
+Lambda: 24.59977  nr.var: 1193 
+Lambda: 21.36518  nr.var: 1325 
+Lambda: 18.5559  nr.var: 1465 
+Lambda: 16.11601  nr.var: 1633 
+Lambda: 13.99694  nr.var: 1809 
+Lambda: 12.1565  nr.var: 1961 
+Lambda: 10.55806  nr.var: 2109 
+Lambda: 9.169795  nr.var: 2221 
+Lambda: 7.964071  nr.var: 2333 
+Lambda: 6.916886  nr.var: 2385 
+Lambda: 6.007394  nr.var: 2425 
+Lambda: 5.21749  nr.var: 2469 
+Lambda: 4.53145  nr.var: 2505 
+Lambda: 3.935616  nr.var: 2521 
+Lambda: 3.418127  nr.var: 2565 
+Lambda: 2.968682  nr.var: 2593 
+Lambda: 2.578334  nr.var: 2597 
+Lambda: 2.239313  nr.var: 2609 
+Lambda: 1.944868  nr.var: 2617 
+Lambda: 1.68914  nr.var: 2629 
+Setting update.every = length(lambda) + 1
+Lambda: 1689.14  nr.var: 1 
+Lambda: 1467.038  nr.var: 1 
+Lambda: 1274.139  nr.var: 9 
+Lambda: 1106.604  nr.var: 17 
+Lambda: 961.0982  nr.var: 17 
+Lambda: 834.7247  nr.var: 17 
+Lambda: 724.9679  nr.var: 17 
+Lambda: 629.6429  nr.var: 17 
+Lambda: 546.852  nr.var: 21 
+Lambda: 474.9472  nr.var: 25 
+Lambda: 412.497  nr.var: 25 
+Lambda: 358.2584  nr.var: 25 
+Lambda: 311.1515  nr.var: 25 
+Lambda: 270.2386  nr.var: 25 
+Lambda: 234.7053  nr.var: 29 
+Lambda: 203.8442  nr.var: 29 
+Lambda: 177.041  nr.var: 29 
+Lambda: 153.7621  nr.var: 33 
+Lambda: 133.5442  nr.var: 49 
+Lambda: 115.9846  nr.var: 65 
+Lambda: 100.734  nr.var: 89 
+Lambda: 87.48859  nr.var: 133 
+Lambda: 75.98484  nr.var: 173 
+Lambda: 65.9937  nr.var: 237 
+Lambda: 57.31628  nr.var: 305 
+Lambda: 49.77984  nr.var: 393 
+Lambda: 43.23436  nr.var: 525 
+Lambda: 37.54953  nr.var: 657 
+Lambda: 32.61219  nr.var: 817 
+Lambda: 28.32406  nr.var: 961 
+Lambda: 24.59977  nr.var: 1205 
+Lambda: 21.36518  nr.var: 1345 
+Lambda: 18.5559  nr.var: 1505 
+Lambda: 16.11601  nr.var: 1685 
+Lambda: 13.99694  nr.var: 1845 
+Lambda: 12.1565  nr.var: 1977 
+Lambda: 10.55806  nr.var: 2085 
+Lambda: 9.169795  nr.var: 2185 
+Lambda: 7.964071  nr.var: 2277 
+Lambda: 6.916886  nr.var: 2357 
+Lambda: 6.007394  nr.var: 2421 
+Lambda: 5.21749  nr.var: 2457 
+Lambda: 4.53145  nr.var: 2489 
+Lambda: 3.935616  nr.var: 2525 
+Lambda: 3.418127  nr.var: 2545 
+Lambda: 2.968682  nr.var: 2569 
+Lambda: 2.578334  nr.var: 2589 
+Lambda: 2.239313  nr.var: 2605 
+Lambda: 1.944868  nr.var: 2629 
+Lambda: 1.68914  nr.var: 2637 
+Setting update.every = length(lambda) + 1
+Lambda: 1689.14  nr.var: 1 
+Lambda: 1467.038  nr.var: 1 
+Lambda: 1274.139  nr.var: 9 
+Lambda: 1106.604  nr.var: 13 
+Lambda: 961.0982  nr.var: 17 
+Lambda: 834.7247  nr.var: 17 
+Lambda: 724.9679  nr.var: 17 
+Lambda: 629.6429  nr.var: 17 
+Lambda: 546.852  nr.var: 17 
+Lambda: 474.9472  nr.var: 25 
+Lambda: 412.497  nr.var: 25 
+Lambda: 358.2584  nr.var: 25 
+Lambda: 311.1515  nr.var: 25 
+Lambda: 270.2386  nr.var: 25 
+Lambda: 234.7053  nr.var: 25 
+Lambda: 203.8442  nr.var: 25 
+Lambda: 177.041  nr.var: 33 
+Lambda: 153.7621  nr.var: 37 
+Lambda: 133.5442  nr.var: 45 
+Lambda: 115.9846  nr.var: 73 
+Lambda: 100.734  nr.var: 101 
+Lambda: 87.48859  nr.var: 137 
+Lambda: 75.98484  nr.var: 161 
+Lambda: 65.9937  nr.var: 225 
+Lambda: 57.31628  nr.var: 305 
+Lambda: 49.77984  nr.var: 369 
+Lambda: 43.23436  nr.var: 537 
+Lambda: 37.54953  nr.var: 653 
+Lambda: 32.61219  nr.var: 781 
+Lambda: 28.32406  nr.var: 925 
+Lambda: 24.59977  nr.var: 1149 
+Lambda: 21.36518  nr.var: 1305 
+Lambda: 18.5559  nr.var: 1481 
+Lambda: 16.11601  nr.var: 1613 
+Lambda: 13.99694  nr.var: 1789 
+Lambda: 12.1565  nr.var: 1901 
+Lambda: 10.55806  nr.var: 2021 
+Lambda: 9.169795  nr.var: 2117 
+Lambda: 7.964071  nr.var: 2229 
+Lambda: 6.916886  nr.var: 2333 
+Lambda: 6.007394  nr.var: 2393 
+Lambda: 5.21749  nr.var: 2441 
+Lambda: 4.53145  nr.var: 2473 
+Lambda: 3.935616  nr.var: 2525 
+Lambda: 3.418127  nr.var: 2545 
+Lambda: 2.968682  nr.var: 2565 
+Lambda: 2.578334  nr.var: 2589 
+Lambda: 2.239313  nr.var: 2613 
+Lambda: 1.944868  nr.var: 2633 
+Lambda: 1.68914  nr.var: 2649 
+Setting update.every = length(lambda) + 1
+Lambda: 1689.14  nr.var: 1 
+Lambda: 1467.038  nr.var: 1 
+Lambda: 1274.139  nr.var: 9 
+Lambda: 1106.604  nr.var: 13 
+Lambda: 961.0982  nr.var: 17 
+Lambda: 834.7247  nr.var: 17 
+Lambda: 724.9679  nr.var: 17 
+Lambda: 629.6429  nr.var: 17 
+Lambda: 546.852  nr.var: 25 
+Lambda: 474.9472  nr.var: 25 
+Lambda: 412.497  nr.var: 25 
+Lambda: 358.2584  nr.var: 25 
+Lambda: 311.1515  nr.var: 25 
+Lambda: 270.2386  nr.var: 25 
+Lambda: 234.7053  nr.var: 25 
+Lambda: 203.8442  nr.var: 33 
+Lambda: 177.041  nr.var: 37 
+Lambda: 153.7621  nr.var: 41 
+Lambda: 133.5442  nr.var: 53 
+Lambda: 115.9846  nr.var: 73 
+Lambda: 100.734  nr.var: 89 
+Lambda: 87.48859  nr.var: 121 
+Lambda: 75.98484  nr.var: 181 
+Lambda: 65.9937  nr.var: 253 
+Lambda: 57.31628  nr.var: 325 
+Lambda: 49.77984  nr.var: 409 
+Lambda: 43.23436  nr.var: 505 
+Lambda: 37.54953  nr.var: 633 
+Lambda: 32.61219  nr.var: 805 
+Lambda: 28.32406  nr.var: 965 
+Lambda: 24.59977  nr.var: 1157 
+Lambda: 21.36518  nr.var: 1305 
+Lambda: 18.5559  nr.var: 1473 
+Lambda: 16.11601  nr.var: 1637 
+Lambda: 13.99694  nr.var: 1781 
+Lambda: 12.1565  nr.var: 1937 
+Lambda: 10.55806  nr.var: 2009 
+Lambda: 9.169795  nr.var: 2117 
+Lambda: 7.964071  nr.var: 2221 
+Lambda: 6.916886  nr.var: 2305 
+Lambda: 6.007394  nr.var: 2369 
+Lambda: 5.21749  nr.var: 2453 
+Lambda: 4.53145  nr.var: 2489 
+Lambda: 3.935616  nr.var: 2509 
+Lambda: 3.418127  nr.var: 2569 
+Lambda: 2.968682  nr.var: 2605 
+Lambda: 2.578334  nr.var: 2605 
+Lambda: 2.239313  nr.var: 2617 
+Lambda: 1.944868  nr.var: 2633 
+Lambda: 1.68914  nr.var: 2645 
+Setting update.every = length(lambda) + 1
+Lambda: 1689.14  nr.var: 1 
+Lambda: 1467.038  nr.var: 1 
+Lambda: 1274.139  nr.var: 9 
+Lambda: 1106.604  nr.var: 17 
+Lambda: 961.0982  nr.var: 17 
+Lambda: 834.7247  nr.var: 17 
+Lambda: 724.9679  nr.var: 17 
+Lambda: 629.6429  nr.var: 17 
+Lambda: 546.852  nr.var: 17 
+Lambda: 474.9472  nr.var: 25 
+Lambda: 412.497  nr.var: 25 
+Lambda: 358.2584  nr.var: 25 
+Lambda: 311.1515  nr.var: 25 
+Lambda: 270.2386  nr.var: 25 
+Lambda: 234.7053  nr.var: 25 
+Lambda: 203.8442  nr.var: 25 
+Lambda: 177.041  nr.var: 33 
+Lambda: 153.7621  nr.var: 33 
+Lambda: 133.5442  nr.var: 57 
+Lambda: 115.9846  nr.var: 77 
+Lambda: 100.734  nr.var: 85 
+Lambda: 87.48859  nr.var: 101 
+Lambda: 75.98484  nr.var: 141 
+Lambda: 65.9937  nr.var: 225 
+Lambda: 57.31628  nr.var: 317 
+Lambda: 49.77984  nr.var: 409 
+Lambda: 43.23436  nr.var: 533 
+Lambda: 37.54953  nr.var: 653 
+Lambda: 32.61219  nr.var: 793 
+Lambda: 28.32406  nr.var: 973 
+Lambda: 24.59977  nr.var: 1141 
+Lambda: 21.36518  nr.var: 1321 
+Lambda: 18.5559  nr.var: 1461 
+Lambda: 16.11601  nr.var: 1625 
+Lambda: 13.99694  nr.var: 1781 
+Lambda: 12.1565  nr.var: 1921 
+Lambda: 10.55806  nr.var: 2013 
+Lambda: 9.169795  nr.var: 2125 
+Lambda: 7.964071  nr.var: 2225 
+Lambda: 6.916886  nr.var: 2309 
+Lambda: 6.007394  nr.var: 2369 
+Lambda: 5.21749  nr.var: 2409 
+Lambda: 4.53145  nr.var: 2485 
+Lambda: 3.935616  nr.var: 2525 
+Lambda: 3.418127  nr.var: 2565 
+Lambda: 2.968682  nr.var: 2577 
+Lambda: 2.578334  nr.var: 2597 
+Lambda: 2.239313  nr.var: 2609 
+Lambda: 1.944868  nr.var: 2617 
+Lambda: 1.68914  nr.var: 2633 
+Lambda: 57.31628  nr.var: 401 
+Warnmeldungen:
+1: In grplasso.default(QBtrain, QYtrain, index = listK$index, lambda = listK$lambda,  :
+  Maximal number of iterations reached for lambda[15]
+2: In grplasso.default(QBtrain, QYtrain, index = listK$index, lambda = listK$lambda,  :
+  Maximal number of iterations reached for lambda[15]
+3: In grplasso.default(QBtrain, QYtrain, index = listK$index, lambda = listK$lambda,  :
+  Maximal number of iterations reached for lambda[15]
+4: In grplasso.default(QBtrain, QYtrain, index = listK$index, lambda = listK$lambda,  :
+  Maximal number of iterations reached for lambda[15]
+> fit.trim <- FitDeconfoundedHDAM(Y, Xc, n.K = 5, meth = "trim", cv.method = "1se", cv.k = 5, n.lambda1 = 15, n.lambda2 = 50)
+Setting update.every = length(lambda) + 1
+Lambda: 1074.909  nr.var: 1 
+Lambda: 656.275  nr.var: 9 
+Lambda: 400.6823  nr.var: 21 
+Lambda: 244.6327  nr.var: 25 
+Lambda: 149.3581  nr.var: 33 
+Lambda: 91.18912  nr.var: 41 
+Lambda: 55.67462  nr.var: 81 
+Lambda: 33.9916  nr.var: 433 
+Lambda: 20.75324  nr.var: 1057 
+Lambda: 12.67069  nr.var: 1757 
+Lambda: 7.735964  nr.var: 2225 
+Lambda: 4.723117  nr.var: 2453 
+Lambda: 2.883653  nr.var: 2569 
+Lambda: 1.760586  nr.var: 2637 
+Lambda: 1.074909  nr.var: 2649 
+Setting update.every = length(lambda) + 1
+Lambda: 565.9205  nr.var: 1 
+Lambda: 345.5172  nr.var: 31 
+Lambda: 210.9522  nr.var: 76 
+Lambda: 128.7948  nr.var: 91 
+Lambda: 78.6344  nr.var: 121 
+Lambda: 48.00946  nr.var: 1096 
+Lambda: 29.31171  nr.var: 3496 
+Lambda: 17.89598  nr.var: 5686 
+Lambda: 10.92621  nr.var: 6841 
+Lambda: 6.670893  nr.var: 7426 
+Lambda: 4.072849  nr.var: 7861 
+Lambda: 2.486638  nr.var: 8056 
+Lambda: 1.518193  nr.var: 8071 
+Lambda: 0.9269176  nr.var: 8011 
+Lambda: 0.5659205  nr.var: 8056 
+Setting update.every = length(lambda) + 1
+Lambda: 433.5128  nr.var: 1 
+Lambda: 264.677  nr.var: 53 
+Lambda: 161.596  nr.var: 157 
+Lambda: 98.66084  nr.var: 157 
+Lambda: 60.23641  nr.var: 547 
+Lambda: 36.77675  nr.var: 4057 
+Lambda: 22.45369  nr.var: 6917 
+Lambda: 13.70888  nr.var: 8997 
+Lambda: 8.369822  nr.var: 10141 
+Lambda: 5.110113  nr.var: 10765 
+Lambda: 3.11993  nr.var: 10869 
+Lambda: 1.904843  nr.var: 11077 
+Lambda: 1.162983  nr.var: 11051 
+Lambda: 0.7100479  nr.var: 11025 
+Lambda: 0.4335128  nr.var: 11051 
+Setting update.every = length(lambda) + 1
+Lambda: 369.1129  nr.var: 1 
+Lambda: 225.3582  nr.var: 75 
+Lambda: 137.5903  nr.var: 223 
+Lambda: 84.0044  nr.var: 223 
+Lambda: 51.28806  nr.var: 2110 
+Lambda: 31.31343  nr.var: 6809 
+Lambda: 19.11811  nr.var: 10398 
+Lambda: 11.67237  nr.var: 11915 
+Lambda: 7.126453  nr.var: 12877 
+Lambda: 4.350987  nr.var: 13654 
+Lambda: 2.656452  nr.var: 13987 
+Lambda: 1.621871  nr.var: 14209 
+Lambda: 0.9902175  nr.var: 14098 
+Lambda: 0.6045676  nr.var: 13987 
+Lambda: 0.3691129  nr.var: 13876 
+Setting update.every = length(lambda) + 1
+Lambda: 327.472  nr.var: 1 
+Lambda: 199.9348  nr.var: 97 
+Lambda: 122.0682  nr.var: 289 
+Lambda: 74.52758  nr.var: 289 
+Lambda: 45.50208  nr.var: 4081 
+Lambda: 27.78085  nr.var: 9889 
+Lambda: 16.96133  nr.var: 13153 
+Lambda: 10.35557  nr.var: 14737 
+Lambda: 6.322494  nr.var: 16033 
+Lambda: 3.860137  nr.var: 17137 
+Lambda: 2.356769  nr.var: 17329 
+Lambda: 1.438902  nr.var: 16945 
+Lambda: 0.8785077  nr.var: 16801 
+Lambda: 0.5363643  nr.var: 16849 
+Lambda: 0.327472  nr.var: 16945 
+Setting update.every = length(lambda) + 1
+Lambda: 1074.909  nr.var: 1 
+Lambda: 656.275  nr.var: 9 
+Lambda: 400.6823  nr.var: 21 
+Lambda: 244.6327  nr.var: 25 
+Lambda: 149.3581  nr.var: 29 
+Lambda: 91.18912  nr.var: 41 
+Lambda: 55.67462  nr.var: 101 
+Lambda: 33.9916  nr.var: 465 
+Lambda: 20.75324  nr.var: 1049 
+Lambda: 12.67069  nr.var: 1733 
+Lambda: 7.735964  nr.var: 2201 
+Lambda: 4.723117  nr.var: 2445 
+Lambda: 2.883653  nr.var: 2557 
+Lambda: 1.760586  nr.var: 2617 
+Lambda: 1.074909  nr.var: 2645 
+Setting update.every = length(lambda) + 1
+Lambda: 565.9205  nr.var: 1 
+Lambda: 345.5172  nr.var: 31 
+Lambda: 210.9522  nr.var: 76 
+Lambda: 128.7948  nr.var: 91 
+Lambda: 78.6344  nr.var: 136 
+Lambda: 48.00946  nr.var: 1006 
+Lambda: 29.31171  nr.var: 3496 
+Lambda: 17.89598  nr.var: 5431 
+Lambda: 10.92621  nr.var: 6571 
+Lambda: 6.670893  nr.var: 7141 
+Lambda: 4.072849  nr.var: 7486 
+Lambda: 2.486638  nr.var: 7711 
+Lambda: 1.518193  nr.var: 7861 
+Lambda: 0.9269176  nr.var: 7936 
+Lambda: 0.5659205  nr.var: 7936 
+Setting update.every = length(lambda) + 1
+Lambda: 433.5128  nr.var: 1 
+Lambda: 264.677  nr.var: 53 
+Lambda: 161.596  nr.var: 131 
+Lambda: 98.66084  nr.var: 157 
+Lambda: 60.23641  nr.var: 651 
+Lambda: 36.77675  nr.var: 4161 
+Lambda: 22.45369  nr.var: 7645 
+Lambda: 13.70888  nr.var: 9387 
+Lambda: 8.369822  nr.var: 10479 
+Lambda: 5.110113  nr.var: 10921 
+Lambda: 3.11993  nr.var: 11233 
+Lambda: 1.904843  nr.var: 11337 
+Lambda: 1.162983  nr.var: 11675 
+Lambda: 0.7100479  nr.var: 11727 
+Lambda: 0.4335128  nr.var: 11753 
+Setting update.every = length(lambda) + 1
+Lambda: 369.1129  nr.var: 1 
+Lambda: 225.3582  nr.var: 75 
+Lambda: 137.5903  nr.var: 186 
+Lambda: 84.0044  nr.var: 223 
+Lambda: 51.28806  nr.var: 1925 
+Lambda: 31.31343  nr.var: 6994 
+Lambda: 19.11811  nr.var: 11027 
+Lambda: 11.67237  nr.var: 12914 
+Lambda: 7.126453  nr.var: 14024 
+Lambda: 4.350987  nr.var: 14616 
+Lambda: 2.656452  nr.var: 15023 
+Lambda: 1.621871  nr.var: 15208 
+Lambda: 0.9902175  nr.var: 15393 
+Lambda: 0.6045676  nr.var: 15430 
+Lambda: 0.3691129  nr.var: 15467 
+Setting update.every = length(lambda) + 1
+Lambda: 327.472  nr.var: 1 
+Lambda: 199.9348  nr.var: 97 
+Lambda: 122.0682  nr.var: 289 
+Lambda: 74.52758  nr.var: 337 
+Lambda: 45.50208  nr.var: 4225 
+Lambda: 27.78085  nr.var: 9745 
+Lambda: 16.96133  nr.var: 13633 
+Lambda: 10.35557  nr.var: 15793 
+Lambda: 6.322494  nr.var: 16897 
+Lambda: 3.860137  nr.var: 17761 
+Lambda: 2.356769  nr.var: 18097 
+Lambda: 1.438902  nr.var: 18289 
+Lambda: 0.8785077  nr.var: 18385 
+Lambda: 0.5363643  nr.var: 18385 
+Lambda: 0.327472  nr.var: 18385 
+Setting update.every = length(lambda) + 1
+Lambda: 1074.909  nr.var: 1 
+Lambda: 656.275  nr.var: 9 
+Lambda: 400.6823  nr.var: 25 
+Lambda: 244.6327  nr.var: 25 
+Lambda: 149.3581  nr.var: 29 
+Lambda: 91.18912  nr.var: 37 
+Lambda: 55.67462  nr.var: 97 
+Lambda: 33.9916  nr.var: 445 
+Lambda: 20.75324  nr.var: 1093 
+Lambda: 12.67069  nr.var: 1749 
+Lambda: 7.735964  nr.var: 2169 
+Lambda: 4.723117  nr.var: 2421 
+Lambda: 2.883653  nr.var: 2557 
+Lambda: 1.760586  nr.var: 2605 
+Lambda: 1.074909  nr.var: 2653 
+Setting update.every = length(lambda) + 1
+Lambda: 565.9205  nr.var: 1 
+Lambda: 345.5172  nr.var: 31 
+Lambda: 210.9522  nr.var: 91 
+Lambda: 128.7948  nr.var: 91 
+Lambda: 78.6344  nr.var: 136 
+Lambda: 48.00946  nr.var: 961 
+Lambda: 29.31171  nr.var: 3796 
+Lambda: 17.89598  nr.var: 5626 
+Lambda: 10.92621  nr.var: 6691 
+Lambda: 6.670893  nr.var: 7276 
+Lambda: 4.072849  nr.var: 7741 
+Lambda: 2.486638  nr.var: 7861 
+Lambda: 1.518193  nr.var: 7921 
+Lambda: 0.9269176  nr.var: 7981 
+Lambda: 0.5659205  nr.var: 7921 
+Setting update.every = length(lambda) + 1
+Lambda: 433.5128  nr.var: 1 
+Lambda: 264.677  nr.var: 53 
+Lambda: 161.596  nr.var: 157 
+Lambda: 98.66084  nr.var: 157 
+Lambda: 60.23641  nr.var: 599 
+Lambda: 36.77675  nr.var: 4213 
+Lambda: 22.45369  nr.var: 7151 
+Lambda: 13.70888  nr.var: 9205 
+Lambda: 8.369822  nr.var: 10297 
+Lambda: 5.110113  nr.var: 10895 
+Lambda: 3.11993  nr.var: 11389 
+Lambda: 1.904843  nr.var: 11597 
+Lambda: 1.162983  nr.var: 11675 
+Lambda: 0.7100479  nr.var: 11831 
+Lambda: 0.4335128  nr.var: 11805 
+Setting update.every = length(lambda) + 1
+Lambda: 369.1129  nr.var: 1 
+Lambda: 225.3582  nr.var: 75 
+Lambda: 137.5903  nr.var: 223 
+Lambda: 84.0044  nr.var: 223 
+Lambda: 51.28806  nr.var: 2517 
+Lambda: 31.31343  nr.var: 7771 
+Lambda: 19.11811  nr.var: 10398 
+Lambda: 11.67237  nr.var: 12026 
+Lambda: 7.126453  nr.var: 13247 
+Lambda: 4.350987  nr.var: 13691 
+Lambda: 2.656452  nr.var: 14172 
+Lambda: 1.621871  nr.var: 14431 
+Lambda: 0.9902175  nr.var: 14505 
+Lambda: 0.6045676  nr.var: 14690 
+Lambda: 0.3691129  nr.var: 14542 
+Setting update.every = length(lambda) + 1
+Lambda: 327.472  nr.var: 1 
+Lambda: 199.9348  nr.var: 97 
+Lambda: 122.0682  nr.var: 289 
+Lambda: 74.52758  nr.var: 337 
+Lambda: 45.50208  nr.var: 4753 
+Lambda: 27.78085  nr.var: 9889 
+Lambda: 16.96133  nr.var: 13153 
+Lambda: 10.35557  nr.var: 15457 
+Lambda: 6.322494  nr.var: 16225 
+Lambda: 3.860137  nr.var: 16753 
+Lambda: 2.356769  nr.var: 17233 
+Lambda: 1.438902  nr.var: 16945 
+Lambda: 0.8785077  nr.var: 16801 
+Lambda: 0.5363643  nr.var: 16369 
+Lambda: 0.327472  nr.var: 16465 
+Setting update.every = length(lambda) + 1
+Lambda: 1074.909  nr.var: 1 
+Lambda: 656.275  nr.var: 9 
+Lambda: 400.6823  nr.var: 25 
+Lambda: 244.6327  nr.var: 25 
+Lambda: 149.3581  nr.var: 29 
+Lambda: 91.18912  nr.var: 37 
+Lambda: 55.67462  nr.var: 105 
+Lambda: 33.9916  nr.var: 461 
+Lambda: 20.75324  nr.var: 1053 
+Lambda: 12.67069  nr.var: 1729 
+Lambda: 7.735964  nr.var: 2181 
+Lambda: 4.723117  nr.var: 2421 
+Lambda: 2.883653  nr.var: 2553 
+Lambda: 1.760586  nr.var: 2609 
+Lambda: 1.074909  nr.var: 2641 
+Setting update.every = length(lambda) + 1
+Lambda: 565.9205  nr.var: 1 
+Lambda: 345.5172  nr.var: 31 
+Lambda: 210.9522  nr.var: 91 
+Lambda: 128.7948  nr.var: 91 
+Lambda: 78.6344  nr.var: 121 
+Lambda: 48.00946  nr.var: 1096 
+Lambda: 29.31171  nr.var: 3706 
+Lambda: 17.89598  nr.var: 5581 
+Lambda: 10.92621  nr.var: 6751 
+Lambda: 6.670893  nr.var: 7276 
+Lambda: 4.072849  nr.var: 7636 
+Lambda: 2.486638  nr.var: 7846 
+Lambda: 1.518193  nr.var: 8026 
+Lambda: 0.9269176  nr.var: 8131 
+Lambda: 0.5659205  nr.var: 8176 
+Setting update.every = length(lambda) + 1
+Lambda: 433.5128  nr.var: 1 
+Lambda: 264.677  nr.var: 53 
+Lambda: 161.596  nr.var: 157 
+Lambda: 98.66084  nr.var: 157 
+Lambda: 60.23641  nr.var: 443 
+Lambda: 36.77675  nr.var: 4369 
+Lambda: 22.45369  nr.var: 7801 
+Lambda: 13.70888  nr.var: 9647 
+Lambda: 8.369822  nr.var: 10739 
+Lambda: 5.110113  nr.var: 11337 
+Lambda: 3.11993  nr.var: 11805 
+Lambda: 1.904843  nr.var: 11831 
+Lambda: 1.162983  nr.var: 11961 
+Lambda: 0.7100479  nr.var: 11961 
+Lambda: 0.4335128  nr.var: 11779 
+Setting update.every = length(lambda) + 1
+Lambda: 369.1129  nr.var: 1 
+Lambda: 225.3582  nr.var: 75 
+Lambda: 137.5903  nr.var: 223 
+Lambda: 84.0044  nr.var: 223 
+Lambda: 51.28806  nr.var: 1888 
+Lambda: 31.31343  nr.var: 7475 
+Lambda: 19.11811  nr.var: 11138 
+Lambda: 11.67237  nr.var: 12803 
+Lambda: 7.126453  nr.var: 14172 
+Lambda: 4.350987  nr.var: 14838 
+Lambda: 2.656452  nr.var: 15097 
+Lambda: 1.621871  nr.var: 15134 
+Lambda: 0.9902175  nr.var: 15393 
+Lambda: 0.6045676  nr.var: 15393 
+Lambda: 0.3691129  nr.var: 15356 
+Setting update.every = length(lambda) + 1
+Lambda: 327.472  nr.var: 1 
+Lambda: 199.9348  nr.var: 97 
+Lambda: 122.0682  nr.var: 289 
+Lambda: 74.52758  nr.var: 289 
+Lambda: 45.50208  nr.var: 4177 
+Lambda: 27.78085  nr.var: 9793 
+Lambda: 16.96133  nr.var: 13105 
+Lambda: 10.35557  nr.var: 14929 
+Lambda: 6.322494  nr.var: 16129 
+Lambda: 3.860137  nr.var: 16801 
+Lambda: 2.356769  nr.var: 17329 
+Lambda: 1.438902  nr.var: 17905 
+Lambda: 0.8785077  nr.var: 17857 
+Lambda: 0.5363643  nr.var: 18001 
+Lambda: 0.327472  nr.var: 18241 
+Setting update.every = length(lambda) + 1
+Lambda: 1074.909  nr.var: 1 
+Lambda: 656.275  nr.var: 9 
+Lambda: 400.6823  nr.var: 25 
+Lambda: 244.6327  nr.var: 25 
+Lambda: 149.3581  nr.var: 29 
+Lambda: 91.18912  nr.var: 41 
+Lambda: 55.67462  nr.var: 97 
+Lambda: 33.9916  nr.var: 369 
+Lambda: 20.75324  nr.var: 1089 
+Lambda: 12.67069  nr.var: 1701 
+Lambda: 7.735964  nr.var: 2173 
+Lambda: 4.723117  nr.var: 2445 
+Lambda: 2.883653  nr.var: 2561 
+Lambda: 1.760586  nr.var: 2633 
+Lambda: 1.074909  nr.var: 2649 
+Setting update.every = length(lambda) + 1
+Lambda: 565.9205  nr.var: 1 
+Lambda: 345.5172  nr.var: 31 
+Lambda: 210.9522  nr.var: 91 
+Lambda: 128.7948  nr.var: 91 
+Lambda: 78.6344  nr.var: 121 
+Lambda: 48.00946  nr.var: 901 
+Lambda: 29.31171  nr.var: 3511 
+Lambda: 17.89598  nr.var: 5431 
+Lambda: 10.92621  nr.var: 6676 
+Lambda: 6.670893  nr.var: 7336 
+Lambda: 4.072849  nr.var: 7741 
+Lambda: 2.486638  nr.var: 7756 
+Lambda: 1.518193  nr.var: 7786 
+Lambda: 0.9269176  nr.var: 7936 
+Lambda: 0.5659205  nr.var: 7966 
+Setting update.every = length(lambda) + 1
+Lambda: 433.5128  nr.var: 1 
+Lambda: 264.677  nr.var: 53 
+Lambda: 161.596  nr.var: 157 
+Lambda: 98.66084  nr.var: 157 
+Lambda: 60.23641  nr.var: 417 
+Lambda: 36.77675  nr.var: 4421 
+Lambda: 22.45369  nr.var: 7593 
+Lambda: 13.70888  nr.var: 9413 
+Lambda: 8.369822  nr.var: 10531 
+Lambda: 5.110113  nr.var: 11415 
+Lambda: 3.11993  nr.var: 11467 
+Lambda: 1.904843  nr.var: 11467 
+Lambda: 1.162983  nr.var: 11337 
+Lambda: 0.7100479  nr.var: 11389 
+Lambda: 0.4335128  nr.var: 11519 
+Setting update.every = length(lambda) + 1
+Lambda: 369.1129  nr.var: 1 
+Lambda: 225.3582  nr.var: 75 
+Lambda: 137.5903  nr.var: 223 
+Lambda: 84.0044  nr.var: 223 
+Lambda: 51.28806  nr.var: 2036 
+Lambda: 31.31343  nr.var: 7475 
+Lambda: 19.11811  nr.var: 10287 
+Lambda: 11.67237  nr.var: 12433 
+Lambda: 7.126453  nr.var: 13432 
+Lambda: 4.350987  nr.var: 14024 
+Lambda: 2.656452  nr.var: 14616 
+Lambda: 1.621871  nr.var: 14949 
+Lambda: 0.9902175  nr.var: 14949 
+Lambda: 0.6045676  nr.var: 14838 
+Lambda: 0.3691129  nr.var: 14690 
+Setting update.every = length(lambda) + 1
+Lambda: 327.472  nr.var: 1 
+Lambda: 199.9348  nr.var: 97 
+Lambda: 122.0682  nr.var: 289 
+Lambda: 74.52758  nr.var: 337 
+Lambda: 45.50208  nr.var: 4321 
+Lambda: 27.78085  nr.var: 10609 
+Lambda: 16.96133  nr.var: 13297 
+Lambda: 10.35557  nr.var: 15121 
+Lambda: 6.322494  nr.var: 15937 
+Lambda: 3.860137  nr.var: 16753 
+Lambda: 2.356769  nr.var: 17281 
+Lambda: 1.438902  nr.var: 17041 
+Lambda: 0.8785077  nr.var: 16993 
+Lambda: 0.5363643  nr.var: 17137 
+Lambda: 0.327472  nr.var: 17377 
+Setting update.every = length(lambda) + 1
+Lambda: 1074.909  nr.var: 1 
+Lambda: 933.5704  nr.var: 1 
+Lambda: 810.8165  nr.var: 5 
+Lambda: 704.2034  nr.var: 9 
+Lambda: 611.6086  nr.var: 9 
+Lambda: 531.1891  nr.var: 13 
+Lambda: 461.3437  nr.var: 13 
+Lambda: 400.6823  nr.var: 21 
+Lambda: 347.9971  nr.var: 25 
+Lambda: 302.2395  nr.var: 25 
+Lambda: 262.4984  nr.var: 25 
+Lambda: 227.9829  nr.var: 25 
+Lambda: 198.0057  nr.var: 25 
+Lambda: 171.9702  nr.var: 25 
+Lambda: 149.3581  nr.var: 29 
+Lambda: 129.7192  nr.var: 33 
+Lambda: 112.6626  nr.var: 33 
+Lambda: 97.84874  nr.var: 41 
+Lambda: 84.98275  nr.var: 41 
+Lambda: 73.80848  nr.var: 45 
+Lambda: 64.10351  nr.var: 65 
+Lambda: 55.67462  nr.var: 89 
+Lambda: 48.35404  nr.var: 121 
+Lambda: 41.99604  nr.var: 225 
+Lambda: 36.47404  nr.var: 357 
+Lambda: 31.67811  nr.var: 513 
+Lambda: 27.5128  nr.var: 709 
+Lambda: 23.89518  nr.var: 877 
+Lambda: 20.75324  nr.var: 1077 
+Lambda: 18.02442  nr.var: 1301 
+Lambda: 15.65442  nr.var: 1533 
+Lambda: 13.59604  nr.var: 1713 
+Lambda: 11.80831  nr.var: 1825 
+Lambda: 10.25566  nr.var: 1981 
+Lambda: 8.907153  nr.var: 2097 
+Lambda: 7.735964  nr.var: 2213 
+Lambda: 6.718773  nr.var: 2301 
+Lambda: 5.83533  nr.var: 2361 
+Lambda: 5.068051  nr.var: 2425 
+Lambda: 4.40166  nr.var: 2489 
+Lambda: 3.822892  nr.var: 2533 
+Lambda: 3.320225  nr.var: 2569 
+Lambda: 2.883653  nr.var: 2601 
+Lambda: 2.504485  nr.var: 2629 
+Lambda: 2.175174  nr.var: 2645 
+Lambda: 1.889163  nr.var: 2641 
+Lambda: 1.64076  nr.var: 2645 
+Lambda: 1.425019  nr.var: 2649 
+Lambda: 1.237645  nr.var: 2645 
+Lambda: 1.074909  nr.var: 2645 
+Setting update.every = length(lambda) + 1
+Lambda: 1074.909  nr.var: 1 
+Lambda: 933.5704  nr.var: 1 
+Lambda: 810.8165  nr.var: 5 
+Lambda: 704.2034  nr.var: 9 
+Lambda: 611.6086  nr.var: 9 
+Lambda: 531.1891  nr.var: 13 
+Lambda: 461.3437  nr.var: 21 
+Lambda: 400.6823  nr.var: 25 
+Lambda: 347.9971  nr.var: 25 
+Lambda: 302.2395  nr.var: 25 
+Lambda: 262.4984  nr.var: 25 
+Lambda: 227.9829  nr.var: 25 
+Lambda: 198.0057  nr.var: 25 
+Lambda: 171.9702  nr.var: 25 
+Lambda: 149.3581  nr.var: 29 
+Lambda: 129.7192  nr.var: 29 
+Lambda: 112.6626  nr.var: 37 
+Lambda: 97.84874  nr.var: 37 
+Lambda: 84.98275  nr.var: 49 
+Lambda: 73.80848  nr.var: 57 
+Lambda: 64.10351  nr.var: 65 
+Lambda: 55.67462  nr.var: 73 
+Lambda: 48.35404  nr.var: 141 
+Lambda: 41.99604  nr.var: 225 
+Lambda: 36.47404  nr.var: 357 
+Lambda: 31.67811  nr.var: 477 
+Lambda: 27.5128  nr.var: 673 
+Lambda: 23.89518  nr.var: 849 
+Lambda: 20.75324  nr.var: 1021 
+Lambda: 18.02442  nr.var: 1249 
+Lambda: 15.65442  nr.var: 1437 
+Lambda: 13.59604  nr.var: 1649 
+Lambda: 11.80831  nr.var: 1805 
+Lambda: 10.25566  nr.var: 1933 
+Lambda: 8.907153  nr.var: 2085 
+Lambda: 7.735964  nr.var: 2197 
+Lambda: 6.718773  nr.var: 2281 
+Lambda: 5.83533  nr.var: 2361 
+Lambda: 5.068051  nr.var: 2441 
+Lambda: 4.40166  nr.var: 2485 
+Lambda: 3.822892  nr.var: 2517 
+Lambda: 3.320225  nr.var: 2549 
+Lambda: 2.883653  nr.var: 2561 
+Lambda: 2.504485  nr.var: 2581 
+Lambda: 2.175174  nr.var: 2613 
+Lambda: 1.889163  nr.var: 2625 
+Lambda: 1.64076  nr.var: 2637 
+Lambda: 1.425019  nr.var: 2637 
+Lambda: 1.237645  nr.var: 2641 
+Lambda: 1.074909  nr.var: 2637 
+Setting update.every = length(lambda) + 1
+Lambda: 1074.909  nr.var: 1 
+Lambda: 933.5704  nr.var: 1 
+Lambda: 810.8165  nr.var: 9 
+Lambda: 704.2034  nr.var: 9 
+Lambda: 611.6086  nr.var: 9 
+Lambda: 531.1891  nr.var: 13 
+Lambda: 461.3437  nr.var: 13 
+Lambda: 400.6823  nr.var: 25 
+Lambda: 347.9971  nr.var: 25 
+Lambda: 302.2395  nr.var: 25 
+Lambda: 262.4984  nr.var: 25 
+Lambda: 227.9829  nr.var: 25 
+Lambda: 198.0057  nr.var: 25 
+Lambda: 171.9702  nr.var: 29 
+Lambda: 149.3581  nr.var: 29 
+Lambda: 129.7192  nr.var: 29 
+Lambda: 112.6626  nr.var: 37 
+Lambda: 97.84874  nr.var: 37 
+Lambda: 84.98275  nr.var: 41 
+Lambda: 73.80848  nr.var: 49 
+Lambda: 64.10351  nr.var: 65 
+Lambda: 55.67462  nr.var: 109 
+Lambda: 48.35404  nr.var: 145 
+Lambda: 41.99604  nr.var: 233 
+Lambda: 36.47404  nr.var: 381 
+Lambda: 31.67811  nr.var: 533 
+Lambda: 27.5128  nr.var: 737 
+Lambda: 23.89518  nr.var: 917 
+Lambda: 20.75324  nr.var: 1117 
+Lambda: 18.02442  nr.var: 1317 
+Lambda: 15.65442  nr.var: 1517 
+Lambda: 13.59604  nr.var: 1673 
+Lambda: 11.80831  nr.var: 1833 
+Lambda: 10.25566  nr.var: 1977 
+Lambda: 8.907153  nr.var: 2089 
+Lambda: 7.735964  nr.var: 2157 
+Lambda: 6.718773  nr.var: 2237 
+Lambda: 5.83533  nr.var: 2357 
+Lambda: 5.068051  nr.var: 2413 
+Lambda: 4.40166  nr.var: 2445 
+Lambda: 3.822892  nr.var: 2485 
+Lambda: 3.320225  nr.var: 2497 
+Lambda: 2.883653  nr.var: 2545 
+Lambda: 2.504485  nr.var: 2561 
+Lambda: 2.175174  nr.var: 2573 
+Lambda: 1.889163  nr.var: 2597 
+Lambda: 1.64076  nr.var: 2609 
+Lambda: 1.425019  nr.var: 2629 
+Lambda: 1.237645  nr.var: 2633 
+Lambda: 1.074909  nr.var: 2633 
+Setting update.every = length(lambda) + 1
+Lambda: 1074.909  nr.var: 1 
+Lambda: 933.5704  nr.var: 1 
+Lambda: 810.8165  nr.var: 5 
+Lambda: 704.2034  nr.var: 9 
+Lambda: 611.6086  nr.var: 9 
+Lambda: 531.1891  nr.var: 13 
+Lambda: 461.3437  nr.var: 13 
+Lambda: 400.6823  nr.var: 25 
+Lambda: 347.9971  nr.var: 25 
+Lambda: 302.2395  nr.var: 25 
+Lambda: 262.4984  nr.var: 25 
+Lambda: 227.9829  nr.var: 25 
+Lambda: 198.0057  nr.var: 25 
+Lambda: 171.9702  nr.var: 29 
+Lambda: 149.3581  nr.var: 29 
+Lambda: 129.7192  nr.var: 33 
+Lambda: 112.6626  nr.var: 33 
+Lambda: 97.84874  nr.var: 33 
+Lambda: 84.98275  nr.var: 41 
+Lambda: 73.80848  nr.var: 45 
+Lambda: 64.10351  nr.var: 65 
+Lambda: 55.67462  nr.var: 97 
+Lambda: 48.35404  nr.var: 157 
+Lambda: 41.99604  nr.var: 273 
+Lambda: 36.47404  nr.var: 393 
+Lambda: 31.67811  nr.var: 549 
+Lambda: 27.5128  nr.var: 725 
+Lambda: 23.89518  nr.var: 909 
+Lambda: 20.75324  nr.var: 1105 
+Lambda: 18.02442  nr.var: 1285 
+Lambda: 15.65442  nr.var: 1449 
+Lambda: 13.59604  nr.var: 1629 
+Lambda: 11.80831  nr.var: 1773 
+Lambda: 10.25566  nr.var: 1957 
+Lambda: 8.907153  nr.var: 2137 
+Lambda: 7.735964  nr.var: 2237 
+Lambda: 6.718773  nr.var: 2353 
+Lambda: 5.83533  nr.var: 2421 
+Lambda: 5.068051  nr.var: 2461 
+Lambda: 4.40166  nr.var: 2513 
+Lambda: 3.822892  nr.var: 2541 
+Lambda: 3.320225  nr.var: 2557 
+Lambda: 2.883653  nr.var: 2569 
+Lambda: 2.504485  nr.var: 2593 
+Lambda: 2.175174  nr.var: 2605 
+Lambda: 1.889163  nr.var: 2617 
+Lambda: 1.64076  nr.var: 2637 
+Lambda: 1.425019  nr.var: 2641 
+Lambda: 1.237645  nr.var: 2649 
+Lambda: 1.074909  nr.var: 2653 
+Setting update.every = length(lambda) + 1
+Lambda: 1074.909  nr.var: 1 
+Lambda: 933.5704  nr.var: 1 
+Lambda: 810.8165  nr.var: 9 
+Lambda: 704.2034  nr.var: 9 
+Lambda: 611.6086  nr.var: 9 
+Lambda: 531.1891  nr.var: 9 
+Lambda: 461.3437  nr.var: 17 
+Lambda: 400.6823  nr.var: 21 
+Lambda: 347.9971  nr.var: 25 
+Lambda: 302.2395  nr.var: 25 
+Lambda: 262.4984  nr.var: 25 
+Lambda: 227.9829  nr.var: 25 
+Lambda: 198.0057  nr.var: 25 
+Lambda: 171.9702  nr.var: 25 
+Lambda: 149.3581  nr.var: 29 
+Lambda: 129.7192  nr.var: 29 
+Lambda: 112.6626  nr.var: 33 
+Lambda: 97.84874  nr.var: 37 
+Lambda: 84.98275  nr.var: 45 
+Lambda: 73.80848  nr.var: 49 
+Lambda: 64.10351  nr.var: 65 
+Lambda: 55.67462  nr.var: 85 
+Lambda: 48.35404  nr.var: 157 
+Lambda: 41.99604  nr.var: 253 
+Lambda: 36.47404  nr.var: 385 
+Lambda: 31.67811  nr.var: 529 
+Lambda: 27.5128  nr.var: 729 
+Lambda: 23.89518  nr.var: 901 
+Lambda: 20.75324  nr.var: 1097 
+Lambda: 18.02442  nr.var: 1249 
+Lambda: 15.65442  nr.var: 1457 
+Lambda: 13.59604  nr.var: 1637 
+Lambda: 11.80831  nr.var: 1825 
+Lambda: 10.25566  nr.var: 1985 
+Lambda: 8.907153  nr.var: 2117 
+Lambda: 7.735964  nr.var: 2237 
+Lambda: 6.718773  nr.var: 2301 
+Lambda: 5.83533  nr.var: 2353 
+Lambda: 5.068051  nr.var: 2405 
+Lambda: 4.40166  nr.var: 2449 
+Lambda: 3.822892  nr.var: 2485 
+Lambda: 3.320225  nr.var: 2517 
+Lambda: 2.883653  nr.var: 2533 
+Lambda: 2.504485  nr.var: 2569 
+Lambda: 2.175174  nr.var: 2597 
+Lambda: 1.889163  nr.var: 2613 
+Lambda: 1.64076  nr.var: 2621 
+Lambda: 1.425019  nr.var: 2641 
+Lambda: 1.237645  nr.var: 2649 
+Lambda: 1.074909  nr.var: 2653 
+Lambda: 48.35404  nr.var: 213 
+Es gab 31 Warnungen (Anzeige mit warnings())
+> 
+> save(fit.null, fit.trim, file = "MotifReplicationWithConfounding_2023_10_23.RData")
+> 
+> # load("MotifReplicationWithConfounding_2023_10_20.RData")
+> # 
+> # length(fit.null$active)
+> # # fit.null has 286 active variables
+> # 
+> # length(fit.trim$active)
+> # # fit.trim has 246 active variables
+> # 
+> # lengthsq <- function(v){sum(v^2)}
+> # coeflength.null <- as.numeric(lapply(fit.null$coefs, lengthsq))
+> # coeflength.trim <- as.numeric(lapply(fit.trim$coefs, lengthsq))
+> # 
+> # par(mfrow=c(2,1))
+> # plot(coeflength.null, ylim = c(0, 10), main = "Length of coefficient vector without transformation", xlab = "j", ylab = "length squared")
+> # plot(coeflength.trim, ylim = c(0,10), main = "Length of coefficient vector witwith trim transformation", xlab = "j", ylab = "length squared")
+> # 
+> # par(mfrow=c(1,1))
+> # plot(coeflength.null, coeflength.trim)
+> # 
+> # 
+> # #plot 9 strongest functions in terms of coeflength
+> # 
+> # ord <- order(coeflength.trim)
+> # ind <- tail(ord, n=9)
+> # 
+> # 
+> # 
+> # par(mfrow = c(3,3))
+> # for (l in 1:9){
+> #   j <- ind[10-l]
+> #   xx <- seq(min(Xc[,j]), max(Xc[,j]), length.out=50)
+> #   fhatj.trim <- estimate.fj(xx, j, fit.trim)
+> #   plot(xx, fhatj.trim, type = "l", col = "blue", xlim=c(min(xx),max(xx)), xlab = "X_j", ylab = "f_j(X_j)", main = paste("j=", j), ylim = c(-0.5, 2.5))
+> #   fhatj.null <- estimate.fj(xx, j, fit.null)
+> #   lines(xx, fhatj.null, type = "l", col = "red", ylim=c(min(xx),max(xx)), xlab = "X_j", ylab = "f_j(X_j)", main = paste("j=", j))
+> #   legend("topleft", legend = c("trim transform", "no transformation"), col = c("blue", "red"), lwd = 1)
+> #   
+> #   abline(h=0, col="grey")
+> #   points(X[,j], rep(-0.5, length(X[, j])), pch = 16, cex= 1, col=rgb(0,0,0, 0.1))
+> # }
+> # 
+> # # mtext("Fitted functions f_j for selected j", side = 3, line = - 2, cex = 1.5, outer = TRUE)
+> # 
+> # # fitted functions look similar
+> # # Note that the functions are actually empirically centered, as most of the mass lies in the area, where the functions are (slightly) negative
+> # 
+> # fhat.null <- estimate.function(X, fit.null)
+> # fhat.trim <- estimate.function(X, fit.trim)
+> # 
+> # 
+> # 
+> # mean(fhat.null^2)
+> # mean(fhat.trim^2)
+> # 
+> # mean(fhat.null^2)/mean(fhat.trim^2)
+> # 
+> # # fhat.null seems to overfit more.
+> # 
+> # par(mfrow=c(1,1))
+> # plot(fhat.null, fhat.trim)
+> # fit <- lm(fhat.trim~fhat.null)
+> # summary(fit)
+> # abline(fit, col = "red")
+> # 
+> # plot(fhat.trim, fhat.null)
+> # fit <- lm(fhat.null~fhat.trim)
+> # abline(fit, col = "red")
+> # summary(fit)
+> # 
+> # # there seems to be a slightly nonlinear relationship
+> # 
+> # 
+> # 
+> # plot(fhat.null, y)
+> # fit <- lm(y~fhat.null)
+> # abline(fit)
+> # summary(fit)
+> # 
+> # 
+> # plot(fhat.trim, y)
+> # fit1 <- lm(y~fhat.trim)
+> # abline(fit1)
+> # summary(fit1)
+> # 
+> # 
+> # 
+> # # residuals vs. fitted values
+> # plot(y-fhat.null, fhat.null)
+> # plot(y-fhat.trim, fhat.trim)
+> # 
+> 
+> proc.time()
+       User      System verstrichen 
+  18336.237      25.448   18431.196 
