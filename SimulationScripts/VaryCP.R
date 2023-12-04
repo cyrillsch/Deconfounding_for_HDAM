@@ -1,5 +1,10 @@
 # Vary the proportion of the confounding
 
+# Import the functions needed
+source("../FunctionsHDAM/FitDeconfoundedHDAM.R")
+source("../FunctionsHDAM/AnalyzeFittedHDAM.R")
+
+
 source("Imports.R")
 library("parallel")
 library(ggplot2)
@@ -66,7 +71,7 @@ for (i in 1:length(prop.vec)){
 te <- Sys.time()
 time.needed <- te-ta
 
-# save(l.trim, l.none, time.needed, file = "ResultsVarConfProp_23_10_11.RData")
+save(l.trim, l.none, time.needed, file = "ResultsVarConfProp_23_10_11.RData")
 
 
 load("ResultsVarConfProp_23_10_11.RData")

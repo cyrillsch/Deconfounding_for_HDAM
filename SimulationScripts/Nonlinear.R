@@ -1,10 +1,13 @@
 # Nonlinear confounding
 
+# Import the functions needed
+source("../FunctionsHDAM/FitDeconfoundedHDAM.R")
+source("../FunctionsHDAM/AnalyzeFittedHDAM.R")
+
+
 source("Imports.R")
 library("parallel")
 library(ggplot2)
-
-
 
 f1 <- function(x){-sin(2*x)}
 f2 <- function(x){2-2*tanh(x+0.5)}

@@ -1,3 +1,7 @@
+# Import the functions needed
+source("../FunctionsHDAM/FitDeconfoundedHDAM.R")
+source("../FunctionsHDAM/AnalyzeFittedHDAM.R")
+
 source("Imports.R")
 library("parallel")
 library(ggplot2)
@@ -83,7 +87,7 @@ for (i in 1:length(n.vec)){
 te <- Sys.time()
 time.needed <- te-ta
 
-# save(l.VarN.trim.NULL, l.VarN.none.NULL, l.VarN.trim.rho04, l.VarN.none.rho04, l.VarN.trim.rho08, l.VarN.none.rho08, time.needed, file = "VarN_2023_10_12.RData")
+save(l.VarN.trim.NULL, l.VarN.none.NULL, l.VarN.trim.rho04, l.VarN.none.rho04, l.VarN.trim.rho08, l.VarN.none.rho08, time.needed, file = "VarN_2023_10_12.RData")
 
 # Plot results
 load("VarN_2023_10_12.RData")
