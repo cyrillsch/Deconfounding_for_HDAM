@@ -1,3 +1,6 @@
+## Code to reproduce Figures 4 and 5
+# Vary the dimension p of X
+
 # Import the functions needed
 source("../FunctionsHDAM/FitDeconfoundedHDAM.R")
 source("../FunctionsHDAM/AnalyzeFittedHDAM.R")

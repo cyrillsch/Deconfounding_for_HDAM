@@ -1,4 +1,5 @@
-# Vary the strength of the confounding
+## Code to reproduce Figure 6
+# Vary the strength of confounding
 
 # Import the functions needed
 source("../FunctionsHDAM/FitDeconfoundedHDAM.R")

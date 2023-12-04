@@ -1,3 +1,6 @@
+## Code to reproduce Figures 2 and 3
+# Vary the sample size n
+
 # Import the functions needed
 source("../FunctionsHDAM/FitDeconfoundedHDAM.R")
 source("../FunctionsHDAM/AnalyzeFittedHDAM.R")

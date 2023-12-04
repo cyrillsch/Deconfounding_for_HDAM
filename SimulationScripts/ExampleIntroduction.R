@@ -1,5 +1,9 @@
+## Code to reproduce Figure 1
+# Introductory example
 
-# consider the setting n = 300, p = 800 from the VarP.R simulation
+# The R-Spript VarP.R needs to be run before.
+
+# consider the setting n = 300, p = 800 from the simulation script VarP.R
 load("VarP_2023_10_12.RData")
 
 nrep <- 100
@@ -37,12 +41,8 @@ resNone.NULL$meth <- as.factor(resNone.NULL$meth)
 resTot.NULL <- rbind(resTrim.NULL, resNone.NULL)
 
 # plot histograms
-
-
-
 resTrim.p800 <- resTrim.NULL[which(resTrim.NULL$p == "800"),]
 resNone.p800 <- resNone.NULL[which(resNone.NULL$p == "800"),]
-
 
 par(mfrow = c(1,2))
 hist(resTrim.p800$MSE, xlim = c(0, 12.5), breaks = seq(0, 12.5, 0.25),

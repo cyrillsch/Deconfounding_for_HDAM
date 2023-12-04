@@ -1,4 +1,5 @@
-# Vary the proportion of the confounding
+## Code to reproduce Figure 7
+# Vary the proportion of confounded covariates
 
 # Import the functions needed
 source("../FunctionsHDAM/FitDeconfoundedHDAM.R")

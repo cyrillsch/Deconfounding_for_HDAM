@@ -1,4 +1,5 @@
-# Nonlinear confounding
+## Code to reproduce figure 8
+# Nonlinear confounding effects
 
 # Import the functions needed
 source("../FunctionsHDAM/FitDeconfoundedHDAM.R")
