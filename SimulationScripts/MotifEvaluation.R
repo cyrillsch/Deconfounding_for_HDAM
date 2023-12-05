@@ -78,7 +78,6 @@ active.diff <- setdiff(fit.null$active, fit.trim$active)
 foo <- function(j){return(j %in% active.diff)}
 
 in.diff <- sapply(ord, foo)
-in.diff
 
 int.ind <- tail(ord[in.diff], 9)
 
@@ -95,7 +94,6 @@ for (l in 1:9){
   abline(h=0, col="grey")
   points(X[,j], rep(-0.5, length(X[, j])), pch = 16, cex= 1, col=rgb(0,0,0, 0.1))
 }
-
 
 # coefficient length of deconfounded vs naive
 par(mfrow=c(1,1))
