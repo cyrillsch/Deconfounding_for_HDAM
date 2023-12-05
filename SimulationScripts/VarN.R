@@ -221,8 +221,6 @@ resNone.rho08$meth <- as.factor(resNone.rho08$meth)
 
 resTot.rho08 <- rbind(resTrim.rho08, resNone.rho08)
 
-
-
 p <- ggplot(resTot.rho08, aes(x=n, y=MSE, fill=meth))+geom_violin(scale = "width")
 p <- p + stat_summary(fun.y=mean, geom="point", position=position_dodge(0.9)) +
   xlab("n") + ylab("MSE") + ggtitle("MSE of f with p=300, q=5, s=4, E Toeplitz(0.8)")
