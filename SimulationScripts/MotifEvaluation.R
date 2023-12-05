@@ -8,8 +8,10 @@ source("../FunctionsHDAM/AnalyzeFittedHDAM.R")
 # The motif data set is not publicly available at the moment.
 load("MotifData/MotifData.RData")
 
-#Data as in DLL-Real-Data.R, i.e. y=genes[, 131].
-# data
+# Data as in DLL-Real-Data.R,(Guo, Z., Yuan W. and Zhang, C. (2019).
+# Local Inference in Additive Models with Decorrelated Local Linear Estimator.)
+# We take the same response as there, i.e. y = genes[, 131].
+
 t = 131
 y = genes[,t]
 X = motifs
