@@ -5,7 +5,15 @@
 source("../FunctionsHDAM/FitDeconfoundedHDAM.R")
 source("../FunctionsHDAM/AnalyzeFittedHDAM.R")
 
-# The motif data set is not publicly available at the moment.
+# The original motif data set from "M. A. Beer and S. Tavazoie (2004). 
+# Predicting Gene Expression from Sequence, Cell, Volume 117, Issue 2"
+# can be obtained at 
+# https://www.sciencedirect.com/science/article/pii/S0092867404003046?via%3Dihub#aep-section-id22
+# However, we analyzed a already pre-processed version of the data set from
+# "Z. Guo, W. Yuan and C. Zhang (2019). Local Inference in Additive Models with 
+# Decorrelated Local Linear Estimator. arXiv preprint arXiv:1907.12732."
+# which is not publicly available at the moment.
+
 load("MotifData/MotifData.RData")
 
 # Data as in DLL-Real-Data.R,(Guo, Z., Yuan W. and Zhang, C. (2019).
