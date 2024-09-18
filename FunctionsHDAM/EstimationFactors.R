@@ -9,7 +9,7 @@ library(grplasso)
 
 # Input:  Data matrix X in R^{n x p}
 # Output: Estimate qhat of the number of hidden confounders
-#         Using the eigenvalue ratio test
+#         Using the eigenvalue ratio method
 
 estimate.qhat <- function(X){
   qmax <- round(min(NROW(X), NCOL(X))/2)
@@ -26,8 +26,7 @@ estimate.qhat <- function(X){
 # Input:  Data matrix X in R^{n x p}
 #         Number of factors qhat, if not supplied, it is estimated 
 #         using the function estimate.qhat()
-# Output: Estimate qhat of the number of hidden confounders
-#         Using the eigenvalue ratio test
+# Output: Estimated factors \hat H
 estimate.Hhat <- function(X, qhat = NULL){
   if(is.null(qhat)){
     qhat <- estimate.qhat(X)
