@@ -1,4 +1,4 @@
-## Code to reproduce Figure 6
+## Code to reproduce Figures 7 and 8
 # Vary the strength of confounding
 
 # Import the functions needed

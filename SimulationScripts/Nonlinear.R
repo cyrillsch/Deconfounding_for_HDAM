@@ -1,4 +1,4 @@
-## Code to reproduce figure 8
+## Code to reproduce Figures 19 and 20
 # Nonlinear confounding effects
 
 # Import the functions needed

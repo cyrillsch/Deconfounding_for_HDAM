@@ -1,4 +1,4 @@
-## Code to reproduce Figures 4 and 5
+## Code to reproduce Figures 5 and 6
 # Vary the dimension p of X
 
 # Import the functions needed

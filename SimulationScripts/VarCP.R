@@ -1,4 +1,4 @@
-## Code to reproduce Figure 7
+## Code to reproduce Figures 17 and 18
 # Vary the proportion of confounded covariates
 
 # Import the functions needed
