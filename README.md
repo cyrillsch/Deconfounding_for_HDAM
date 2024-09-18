@@ -1,7 +1,7 @@
 # Spectral Deconfounding for High-Dimensional Sparse Additive Models
 
 This repository contains the code for reproducing the plots in the paper
-Cyrill Scheidegger, Zijian Guo and Peter Bühlmann (2023). Spectral deconfounding for high-dimensional sparse additive models, arXiv:2312.02860
+<i>Cyrill Scheidegger, Zijian Guo and Peter Bühlmann (2023). Spectral deconfounding for high-dimensional sparse additive models, arXiv:2312.02860</i>
 
 The file `FitDeconfoundedHDAM.R`in the folder `FunctionsHDAM` contains the function `FitDeconfoundedHDAM` to fit a deconfounded high-dimensional additive model and some helper functions. The file `EstimationFactors.R` in the folder `FunctionsHDAM` contains the function `FitHDAM.withEstFactors` that implements an ad hoc method to achieve the same goal. The file `AnalyzeFittedHDAM.R` in the folder `FunctionsHDAM` contains functions to analyze/predict high-dimensional additive models based on the output of the function `FitDeconfoundedHDAM`.
 
