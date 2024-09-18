@@ -4,8 +4,9 @@
 # Import the functions needed
 source("../FunctionsHDAM/FitDeconfoundedHDAM.R")
 source("../FunctionsHDAM/AnalyzeFittedHDAM.R")
+source("../FunctionsHDAM/EstimationFactors.R")
 
-source("Imports.R")
+
 library("parallel")
 library(ggplot2)
 
@@ -16,10 +17,7 @@ f4 <- function(x){4/(exp(x)+exp(-x))}
 f <- function(X){f1(X[,1])+f2(X[,2])+f3(X[,3])+f4(X[,4])}
 
 # function to induce nonlinearity in H->X
-# # linear interpolation between 0.3t and tanh(1.5t)
-# nlX <- function(al, t){(1-al)*0.3*t+al*tanh(1.5*t)}
-
-# same function as below: linear interpolation between t and abs(t)
+# linear interpolation between t and abs(t)
 nlX <- function(al, t){(1-al)*t+al*abs(t)}
 
 # function to induce nonlinearity in H->Y
@@ -31,261 +29,129 @@ q <- 5
 n <-  400
 p <- 500
 
-one.sim <- function(al, bet, meth, seed.val){
+
+one.sim <- function(al, bet, seed.val, decreasing.confounding.influence = FALSE){
   set.seed(seed.val)
   # generate data
   Gamma <- matrix(runif(q*p, min = -1, max = 1), nrow=q)
+  if(decreasing.confounding.influence){
+    gam.weight <- 1/(1:q)
+    Gamma <- gam.weight * Gamma
+  }
   psi <- runif(q, min = 0, max = 2)
   H <- matrix(rnorm(n*q), nrow = n)
   E <- matrix(rnorm(n*p), nrow = n)
   e <- 0.5*rnorm(n)
   X <- nlX(al, H %*% Gamma) + E
   Y <- f(X) + nlY(bet, H %*% psi) + e
-  lres <- FitDeconfoundedHDAM(Y, X, n.K = 5, meth = meth, cv.method = "1se", cv.k = 5, n.lambda1 = 10, n.lambda2 = 25)
+  lres.trim <- FitDeconfoundedHDAM(Y, X, n.K = 5, meth = "trim", cv.method = "1se", cv.k = 5, n.lambda1 = 10, n.lambda2 = 25)
+  lres.none <- FitDeconfoundedHDAM(Y, X, n.K = 5, meth = "none", cv.method = "1se", cv.k = 5, n.lambda1 = 10, n.lambda2 = 25)
+  lres.estFac <- FitHDAM.withEstFactors(Y, X, n.K = 5, cv.method = "1se", cv.k = 5, n.lambda1 = 10, n.lambda2 = 25)
   ntest <- 1000
   Htest <- matrix(rnorm(ntest * q), nrow = ntest)
   Etest <- matrix(rnorm(ntest * p), nrow = ntest)
-  Xtest <- nlX(al, Htest %*% Gamma) +Etest
-  fhat.res <- estimate.function(Xtest, lres)
+  Xtest <- nlX(al, Htest %*% Gamma) + Etest
+  fhat.trim <- estimate.function(Xtest, lres.trim)
+  fhat.none <- estimate.function(Xtest, lres.none)
+  fhat.estFac <- estimate.function(Xtest, lres.estFac)
   fXtest <- f(Xtest)
-  return(c(mean((fXtest-fhat.res)^2), length(lres$active)))
+  mat.return <- rbind(c(mean((fXtest-fhat.trim)^2), mean((fXtest-fhat.none)^2), mean((fXtest-fhat.estFac)^2)),
+                      c(length(lres.trim$active), length(lres.none$active), length(lres.estFac$active)))
+  rownames(mat.return) <- c("MSE", "Active")
+  colnames(mat.return) <- c("trim", "none", "estFac")
+  return(mat.return)
 }
 
-nrep <- 50
+
+nrep <- 100
+use.cores <- 50
+
+
 
 ta <- Sys.time()
 al.vec <- seq(0, 1, length.out=7)
 bet.vec <- seq(0, 1, length.out=7)
 
-l.trim <- list()
-l.none <- list()
 
 set.seed(1432)
 smax <- 2100000000
 seed.vec <- sample(1:smax, nrep)
 
 for (i in 1:length(al.vec)){
-  l.trim[[i]] <- list()
-  l.none[[i]] <- list()
-  for(l in 1:length(bet.vec)){
-    al <- al.vec[i]
-    bet <- bet.vec[l]
-    fun = function(seed.val){return(one.sim(al, bet, "trim", seed.val))}
-    l.trim[[i]][[l]] <- mclapply(seed.vec, fun, mc.cores = 60)
-    fun = function(seed.val){return(one.sim(al, bet, "none", seed.val))}
-    l.none[[i]][[l]] <- mclapply(seed.vec, fun, mc.cores = 60)
+  al <- al.vec[i]
+  for (j in 1:length(bet.vec)){
+    bet <- bet.vec[j]
+    # with equal confounding influence
+    fun = function(seed.val){return(one.sim(al = al, bet = bet, seed.val = seed.val, decreasing.confounding.influence = FALSE))}
+    lres <- mclapply(seed.vec, fun, mc.cores = use.cores)
+    filename <- paste("SimulationResults/NL_2024_08_13/equalCI_al_", i,"_bet_", j, ".RData", sep = "")
+    save(lres, file = filename)
+    # with decreasing confounding influence
+    fun = function(seed.val){return(one.sim(al = al, bet = bet, seed.val = seed.val, decreasing.confounding.influence = TRUE))}
+    lres <- mclapply(seed.vec, fun, mc.cores = use.cores)
+    filename <- paste("SimulationResults/NL_2024_08_13/decreasingCI_al_", i,"_bet_", j, ".RData", sep = "")
+    save(lres, file = filename)
   }
 }
 te <- Sys.time()
 time.needed <- te-ta
+print(paste("Time needed: ", time.needed))
 
-save(l.trim, l.none, time.needed, file = "ResultsNL_23_10_11.RData")
 
-load("ResultsNL_23_10_11.RData")
 
-trim.MSE.mean <- matrix(ncol=length(bet.vec), nrow=length(al.vec))
-trim.MSE.sd <- matrix(ncol=length(bet.vec), nrow=length(al.vec))
+calc.average <- function(quantity, CI, meth, i, j){
+  filename <- paste("SimulationResults/NL_2024_08_13/", CI, "CI_al_", i,"_bet_", j, ".RData", sep = "")
+  load(filename)
+  return(mean(unlist(lapply(lres, function(mat){mat[quantity, meth]}))))
+}
 
-trim.active.mean <- matrix(ncol=length(bet.vec), nrow=length(al.vec))
-trim.active.sd <- matrix(ncol=length(bet.vec), nrow=length(al.vec))
-
-none.MSE.mean <- matrix(ncol=length(bet.vec), nrow=length(al.vec))
-none.MSE.sd <- matrix(ncol=length(bet.vec), nrow=length(al.vec))
-
-none.active.mean <- matrix(ncol=length(bet.vec), nrow=length(al.vec))
-none.active.sd <- matrix(ncol=length(bet.vec), nrow=length(al.vec))
-
-for(i in 1:length(al.vec)){
-  for(j in 1:length(bet.vec)){
-    mses.trim <- do.call(rbind, l.trim[[i]][[j]])[, 1]
-    active.trim <- do.call(rbind, l.trim[[i]][[j]])[, 2]
-    mses.none <- do.call(rbind, l.none[[i]][[j]])[, 1]
-    active.none <- do.call(rbind, l.none[[i]][[j]])[, 2]
-    trim.MSE.mean[i,j] <- mean(mses.trim)
-    trim.MSE.sd[i,j] <- sd(mses.trim)
-    trim.active.mean[i,j] <- mean(active.trim)
-    trim.active.sd[i,j] <- sd(active.trim)
-    none.MSE.mean[i,j] <- mean(mses.none)
-    none.MSE.sd[i,j] <- sd(mses.none)
-    none.active.mean[i,j] <- mean(active.none)
-    none.active.sd[i,j] <- sd(active.none)
+quantity.vec <- c("MSE", "Active")
+CI.vec <- c("equal", "decreasing")
+meth.vec <- c("trim", "none", "estFac")
+for(quantity in quantity.vec){
+  for(CI in CI.vec){
+    for(meth in meth.vec){
+      varname <- paste("mat_", quantity, "_", CI, "CI_", meth, sep = "")
+      assign(varname, outer(1:7, 1:7, FUN = Vectorize(function(i,j){calc.average(quantity, CI, meth, i, j)})))
+    }
   }
 }
 
 
-# plot MSEs
-library(viridis)
-
-par(mfrow = c(1, 2))
-image(al.vec, bet.vec, trim.MSE.mean, axes = FALSE, col = magma(100, direction = -1), xlab = expression(alpha), ylab = expression(beta),  zlim = c(0.4, 7),
-      main = "Average MSE with trim transformation")
-
-axis(1, al.vec, round(al.vec, digits = 2))
-axis(2, bet.vec, round(bet.vec, digits = 2))
-
-for (i in 1:length(al.vec)){
-  for (j in 1:length(bet.vec)){
-    if(trim.MSE.mean[i,j] < 4){
-      text(al.vec[i], bet.vec[j], round(trim.MSE.mean[i,j], 2), cex = 1.5)
-    }
-    else{
-      text(al.vec[i], bet.vec[j], round(trim.MSE.mean[i,j], 2), cex = 1.5, col = "white")
-    }
-  
-  }
-}
-
-image(al.vec, bet.vec, none.MSE.mean, axes = FALSE, col = magma(100, direction = -1), xlab = expression(alpha), ylab = expression(beta),  zlim = c(0.4, 7),
-      main = "Average MSE without transformation")
-
-axis(1, al.vec, round(al.vec, digits = 2))
-axis(2, bet.vec, round(bet.vec, digits = 2))
-
-for (i in 1:length(al.vec)){
-  for (j in 1:length(bet.vec)){
-    if(none.MSE.mean[i,j] < 4){
-      text(al.vec[i], bet.vec[j], round(none.MSE.mean[i,j], 2), cex = 1.5)
-    }
-    else{
-      text(al.vec[i], bet.vec[j], round(none.MSE.mean[i,j], 2), cex = 1.5, col = "white")
-    }
-    
-  }
-}
-
-# plot ratio MSEtrim/MSEnone
-par(mfrow=c(1,1))
-ratio.MSE.mean <- trim.MSE.mean/none.MSE.mean
-
-image(al.vec, bet.vec, ratio.MSE.mean, axes = FALSE, col = magma(100, direction = -1), xlab = expression(alpha), ylab = expression(beta),
-      main = "Ratio of average MSE")
-
-axis(1, al.vec, round(al.vec, digits = 2))
-axis(2, bet.vec, round(bet.vec, digits = 2))
-
-for (i in 1:length(al.vec)){
-  for (j in 1:length(bet.vec)){
-    if(ratio.MSE.mean[i,j] < 1){
-      text(al.vec[i], bet.vec[j], round(ratio.MSE.mean[i,j], 2), cex = 1.5)
-    }
-    else{
-      text(al.vec[i], bet.vec[j], round(ratio.MSE.mean[i,j], 2), cex = 1.5, col = "white")
-    }
-    
-  }
-}
-
-# plot standard deviations
-par(mfrow = c(1, 2))
-image(al.vec, bet.vec, trim.MSE.sd, axes = FALSE, col = magma(100, direction = -1), xlab = expression(alpha), ylab = expression(beta),  zlim = c(0.1, 2.6),
-      main = "sd of MSEs with trim transformation")
-
-axis(1, al.vec, round(al.vec, digits = 2))
-axis(2, bet.vec, round(bet.vec, digits = 2))
-
-for (i in 1:length(al.vec)){
-  for (j in 1:length(bet.vec)){
-    if(trim.MSE.sd[i,j] < 1.45){
-      text(al.vec[i], bet.vec[j], round(trim.MSE.sd[i,j], 2), cex = 1.5)
-    }
-    else{
-      text(al.vec[i], bet.vec[j], round(trim.MSE.sd[i,j], 2), cex = 1.5, col = "white")
-    }
-    
-  }
-}
-
-image(al.vec, bet.vec, none.MSE.sd, axes = FALSE, col = magma(100, direction = -1), xlab = expression(alpha), ylab = expression(beta),  zlim = c(0.1, 2.6),
-      main = "sd of MSEs without transformation")
-
-axis(1, al.vec, round(al.vec, digits = 2))
-axis(2, bet.vec, round(bet.vec, digits = 2))
-
-for (i in 1:length(al.vec)){
-  for (j in 1:length(bet.vec)){
-    if(none.MSE.sd[i,j] < 1.45){
-      text(al.vec[i], bet.vec[j], round(none.MSE.sd[i,j], 2), cex = 1.5)
-    }
-    else{
-      text(al.vec[i], bet.vec[j], round(none.MSE.sd[i,j], 2), cex = 1.5, col = "white")
+meth.name.vec <- c("deconfounded", "naive", "estimated factors")
+library(viridisLite)
+plot_ratios <- function(i, j, CI){
+  MSE_meth1 <- get(paste("mat_MSE_", CI, "CI_", meth.vec[i], sep = ""))
+  MSE_meth2 <- get(paste("mat_MSE_", CI, "CI_", meth.vec[j], sep = ""))
+  mat_ratio <- MSE_meth1/MSE_meth2
+  main_text <- paste( meth.name.vec[i], " vs. ", meth.name.vec[j], sep = "")
+  image(al.vec, bet.vec, mat_ratio, axes = FALSE, col = magma(100, direction = -1), xlab = expression(alpha), ylab = expression(beta),
+       main = main_text)
+  axis(1, al.vec, round(al.vec, digits = 2))
+  axis(2, bet.vec, round(bet.vec, digits = 2))
+  for (i in 1:length(al.vec)){
+    for (j in 1:length(bet.vec)){
+      if(mat_ratio[i,j] < 0.995){
+        text(al.vec[i], bet.vec[j], round(mat_ratio[i,j], 2), cex = 1.3)
+      }
+      else{
+        text(al.vec[i], bet.vec[j], round(mat_ratio[i,j], 2), cex = 1.3, col = "white")
+      }
     }
   }
 }
 
-# plot average size of active sets
 
-par(mfrow = c(1, 2))
-image(al.vec, bet.vec, trim.active.mean, axes = FALSE, col = magma(100, direction = -1), xlab = expression(alpha), ylab = expression(beta),  zlim = c(16, 144),
-      main = "Average size of active set with trim transformation")
+par(mfrow = c(1,2), oma = c(0,0, 1, 0))
+plot_ratios(1, 2, "equal")
+plot_ratios(1, 3, "equal")
 
-axis(1, al.vec, round(al.vec, digits = 2))
-axis(2, bet.vec, round(bet.vec, digits = 2))
+mtext("Ratio of average MSE \u2013 equal confounding influence", outer = TRUE, cex = 1.5, line = -1)
 
-for (i in 1:length(al.vec)){
-  for (j in 1:length(bet.vec)){
-    if(trim.active.mean[i,j] < 76){
-      text(al.vec[i], bet.vec[j], round(trim.active.mean[i,j], 0), cex = 1.5)
-    }
-    else{
-      text(al.vec[i], bet.vec[j], round(trim.active.mean[i,j], 0), cex = 1.5, col = "white")
-    }
-    
-  }
-}
+par(mfrow = c(1,2), oma = c(0,0, 1, 0))
+plot_ratios(1, 2, "decreasing")
+plot_ratios(1, 3, "decreasing")
 
-image(al.vec, bet.vec, none.active.mean, axes = FALSE, col = magma(100, direction = -1), xlab = expression(alpha), ylab = expression(beta),  zlim = c(16, 144),
-      main = "Average size of active set without transformation")
+mtext("Ratio of average MSE \u2013 decreasing confounding influence", outer = TRUE, cex = 1.5, line = -1)
 
-axis(1, al.vec, round(al.vec, digits = 2))
-axis(2, bet.vec, round(bet.vec, digits = 2))
 
-for (i in 1:length(al.vec)){
-  for (j in 1:length(bet.vec)){
-    if(none.active.mean[i,j] < 76){
-      text(al.vec[i], bet.vec[j], round(none.active.mean[i,j], 0), cex = 1.5)
-    }
-    else{
-      text(al.vec[i], bet.vec[j], round(none.active.mean[i,j], 0), cex = 1.5, col = "white")
-    }
-    
-  }
-}
-  
-# plot sd of size of active sets
-
-par(mfrow = c(1, 2))
-image(al.vec, bet.vec, trim.active.sd, axes = FALSE, col = magma(100, direction = -1), xlab = expression(alpha), ylab = expression(beta),  zlim = c(10, 37),
-      main = "sd of size of active set with trim transformation")
-
-axis(1, al.vec, round(al.vec, digits = 2))
-axis(2, bet.vec, round(bet.vec, digits = 2))
-
-for (i in 1:length(al.vec)){
-  for (j in 1:length(bet.vec)){
-    if(trim.active.sd[i,j] < 25){
-      text(al.vec[i], bet.vec[j], round(trim.active.sd[i,j], 0), cex = 1.5)
-    }
-    else{
-      text(al.vec[i], bet.vec[j], round(trim.active.sd[i,j], 0), cex = 1.5, col = "white")
-    }
-    
-  }
-}
-
-image(al.vec, bet.vec, none.active.sd, axes = FALSE, col = magma(100, direction = -1), xlab = expression(alpha), ylab = expression(beta),  zlim = c(10, 37),
-      main = "sd of size of active set without transformation")
-
-axis(1, al.vec, round(al.vec, digits = 2))
-axis(2, bet.vec, round(bet.vec, digits = 2))
-
-for (i in 1:length(al.vec)){
-  for (j in 1:length(bet.vec)){
-    if(none.active.sd[i,j] < 25){
-      text(al.vec[i], bet.vec[j], round(none.active.sd[i,j], 0), cex = 1.5)
-    }
-    else{
-      text(al.vec[i], bet.vec[j], round(none.active.sd[i,j], 0), cex = 1.5, col = "white")
-    }
-    
-  }
-}
