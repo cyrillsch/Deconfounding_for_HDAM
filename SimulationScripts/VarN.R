@@ -1,4 +1,4 @@
-## Code to reproduce Figures 3 and 4
+## Code to reproduce Figures 3, 4, 13 and 14
 # Vary the sample size n
 
 
