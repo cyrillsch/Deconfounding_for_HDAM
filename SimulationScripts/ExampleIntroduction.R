@@ -23,7 +23,7 @@ for(l in 1:nrep){
 pdf("PlotResults/FinalPlots/ExampleIntroduction.pdf", width = 7, height = 4)
 par(mfrow = c(1,2))
 hist(df[df$meth == "deconfounded", "MSE"], xlim = c(0, 12.5), breaks = seq(0, 12.5, 0.25),
-     col = rgb(0,0, 1,0.2), xlab = "MSE", main = "Prediction error of f")
+     col = rgb(0,0, 1,0.2), xlab = "MSE", main = "Mean squared error of f")
 hist(df[df$meth == "naive", "MSE"], add = TRUE, breaks = seq(0, 12.5, 0.25), col = rgb(1,0, 0,0.2))
 
 legend("topright", legend=c("deconfounded","naive"), col=c(rgb(0,0,1,0.2), 
